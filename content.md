@@ -8,18 +8,18 @@ class: center, middle, inverse
 ---
 .left-column[
   ## Why Use C++?
-  ### Why not Python, JavaScript, …
+  #### Why not Python or JavaScript?
 ]
 
 .right-column[
-Why go through
+Why go through …
 
 - multiple data types
 - raw _pointers_, contorted _references_
 - manual memory management
 
 .pull-left[
-> … when you can “just be cool”
+… when you can _just be cool_ – use Python instead
 ]
 
 .pull-right[
@@ -31,7 +31,7 @@ print(x)
 ```
 ]
 
-How [C++](http://coliru.stacked-crooked.com/a/506ad2b09f29373d) fares against Python here?
+How C++ fares against Python here?
 
 ``` c++
 int      x1 = pow(2, 63);  // GCC: overflow
@@ -41,7 +41,7 @@ uint64_t x3 = 1   << 63;   // GCC: shift count >= type width
 ```
 
 .pull-left[
-**Results with GCC**
+**Results with [GCC](http://coliru.stacked-crooked.com/a/506ad2b09f29373d)**
 ```
 2147483647
 4294967295
