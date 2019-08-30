@@ -7,6 +7,7 @@
          @import url(https://fonts.googleapis.com/css?family=Droid+Serif);
          @import url(https://fonts.googleapis.com/css?family=Yanone+Kaffeesatz);
          @import url(https://fonts.googleapis.com/css?family=Ubuntu+Mono:400,700,400italic);
+         @import url('https://fonts.googleapis.com/css?family=Charm&display=swap');
 
          body {
              font-family: 'Droid Serif';
@@ -63,6 +64,12 @@
          .inverse h1, .inverse h2 {
              color: #f3f3f3;
              line-height: 0.8em;
+             letter-spacing: 1mm;
+             word-spacing: 2mm;
+         }
+
+         .inverse strong {
+             color: rgb(249, 38, 114);
          }
 
          /* Slide-specific styling */
@@ -116,12 +123,12 @@
              padding-top: 1em;
          }
          blockquote {
+             font-family: 'Charm';
              position:relative;
              margin:1em 0;
              padding: 1mm 2rem;
              /* color: #999; */
              letter-spacing: 0.75px;
-             font-style: italic;
              border-radius:.2rem;
              border-left:1.5rem solid rgba(68,138,255,.4);
              background-color:rgba(68,138,255,.15);

@@ -1,14 +1,14 @@
 
 class: center, middle, inverse
 
-# The Spirit of _C++_
+# The Spirit of **C++**
 
 ## Sundaram Ramaswamy
 
 ---
 .left-column[
-  ## Why Use C++
-  ### Why not Python, JavaScript or …
+  ## Why Use C++?
+  ### Why not Python, JavaScript, …
 ]
 
 .right-column[
@@ -19,7 +19,7 @@ Why go through
 - manual memory management
 
 .pull-left[
-> … when you can "just be cool"
+> … when you can “just be cool”
 ]
 
 .pull-right[
@@ -67,12 +67,12 @@ uint64_t x3 = 1   << 63;   // GCC: shift count >= type width
 
 class: center, middle, inverse
 
-# C++ Epic fail!
+# **Intuitiveness**: Epic fail!
 
 ---
 class: center, middle, inverse
 
-# OK.  Let’s order food!
+# OK.  Let’s order food.
 
 ---
 
@@ -111,7 +111,7 @@ For every item you order, _Squiggy_
 
 - delivers to you
 
-> You tip the man for **delivering 30 mins later**!
+> You tip the man **delivering 30 mins later**!
 
 ---
 
@@ -145,8 +145,9 @@ It’s as complex as a
 
 class: center, middle, inverse
 
-# That makes you a _System Programmer_
-## Take pride; there aren’t many
+## That makes you a
+# **System Programmer**
+### Take pride — there aren’t many.
 
 ---
 
