@@ -1,4 +1,3 @@
-
 class: center, middle, inverse
 
 # The Spirit of **C++**
@@ -14,12 +13,12 @@ class: center, middle, inverse
 .right-column[
 Why go through …
 
-- multiple data types
+- crude data types
 - raw _pointers_, contorted _references_
 - manual memory management
 
 .pull-left[
-… when you can _just be cool_ – use Python instead
+… when you can _just be cool_ and use Python instead
 ]
 
 .pull-right[
@@ -78,9 +77,11 @@ class: center, middle, inverse
 
 # At a Restaurant
 
-For every item you order, _the waiter_
+For every item you order, say _the waiter_
 
 - goes to a register
+
+- checks availability
 
 - makes an entry
 
@@ -92,16 +93,18 @@ For every item you order, _the waiter_
 
 > **Terrible. Turnaround. Time**
 >
-> You: hungry + angry = `hangry` 😠
+> You get hungry + angry → `hangry` 😠
 
 
 ---
 
 # At Home
 
-For every item you order, _Squiggy_
+For every item you order, say _Squiggy_
 
 - goes to a register
+
+- checks availability
 
 - makes an entry
 
@@ -117,21 +120,32 @@ For every item you order, _Squiggy_
 
 class: center, middle, inverse
 
-# What changed?
+# Why?
 
 ---
 
-## Different Settings, Different Expectations
+## Different Settings, Different Requirements
 
 * At a restaurant, you expect a high turn-around time
-  - Wasting time on petty procedures is frustrating
+  - Wasting time on **avoidable**, petty procedures means an overall delay in eating
 
 * When ordering from home, you know it’ll take time
   - Wasting 5 mins is OK when it’s 30 mins b/w restaurant ↔ home (bottleneck elsewhere)
 
-> Browser is **system software**.
+## Critical vs Non-critical Software
 
-It’s as complex as a
+* .tag[Performance] When the network lag, I/O read latency or user input is the bottleneck, wasting a few milliseconds/operation is OK _e.g. running a VM, garbage collecting, etc._
+
+* .tag[Flexibility] Since performance isn’t epitome, sacrificing finer control for better features is OK too! _e.g. well-polished data structures like in-built dictionaries, big integers, etc._
+
+> Good engineers use the **right tool for the right job**.
+
+---
+
+# Browser is **system software**
+
+.pull-left[
+It’s complex and critical; comparable to a
 
 * Kernel
 
@@ -140,6 +154,15 @@ It’s as complex as a
 * Compiler / virtual machine
 
 * Real-time financial trading system
+]
+.pull-right[
+> Wasting some minuscule time delta every operation = **systemic lag** hurting productivity.
+]
+
+.left[## C++]
+
+* .tag[Performance] Gives very minimal abstraction thereby leading to native speeds
+* .tag[Flexibility] Projects the underlying machine, doesn’t get in programmer’s way
 
 ---
 
@@ -174,3 +197,39 @@ class: center, middle, inverse
 * No security holes
   - It’d mean user’s personal data loss, money loss, etc.
   - **Need**: Access to underlying machine’s security features
+
+---
+
+## Built-in Data Types / Primitives
+
+.pull-left[
+### Integral Types.red[¹]
+
+* `char`     (== 1 byte)
+* `char16_t` (>= 2 bytes)
+* `char32_t` (>= 4 bytes)
+* `short`    (>= 2 bytes)
+* `int`      (>= short)
+* `long`     (>= 4 bytes)
+* `long long` (>= 8 bytes)
+
+]
+
+.pull-right[
+### Floating-point Types
+
+* `float` (32-bit; IEEE-754 specified single-precision)
+* `double` (64-bit; IEEE-754 specified double-precision)
+* `long double` (unspecified: can be 80, 96 or 128 bits depending on compiler and machine)
+
+]
+
+### Other Types
+- `void`
+- `bool` (implementation-defined)
+- Pointer types
+  * Width: executable’s bit width; check `sizeof(void*)`
+  * Arithmetic based on pointed-to type e.g. `int *p; ++p;` moves `p` by `sizeof(int)`
+- Array types e.g. `int[2], char[6]`
+
+.footnote[.red[¹] : variants of `unsigned` and `signed` — usually [two’s complement](https://en.wikipedia.org/wiki/Two%27s_complement)]

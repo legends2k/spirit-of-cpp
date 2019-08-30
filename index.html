@@ -11,21 +11,40 @@
 
          body {
              font-family: 'EB Garamond';
+             word-spacing: 0.5mm;
          }
          h1, h2, h3 {
              font-family: 'Yanone Kaffeesatz';
              font-weight: 400;
              margin-bottom: 0;
          }
+         h1 strong {
+             color: #009500;
+             letter-spacing: .75mm;
+         }
          .remark-slide-content h1 { font-size: 3em; }
          .remark-slide-content h2 { font-size: 2em; }
          .remark-slide-content h3 { font-size: 1.6em; }
          .footnote {
              position: absolute;
-             bottom: 3em;
+             bottom: 2em;
+             font-size: 0.3cm;
+         }
+         .footnote .red {
+             color: #fa0000;
+             font-size: 0.6cm;
+             vertical-align: text-top;
+         }
+         .tag {
+             background: #ff9500;
+             color: #fff;
+             border-radius: 5px;
+             padding: 0.5mm 1mm;
+             font-family: 'Ubuntu Mono';
+             font-size: 0.85em;
          }
          li p { line-height: 1.25em; }
-         .red { color: #fa0000; }
+         .red { color: #fa0000; font-size: 0.6em; vertical-align: super; }
          .large { font-size: 2em; }
          a, a > code {
              color: rgb(249, 38, 114);
@@ -38,7 +57,12 @@
          strong {
              color: #000;
          }
-         .remark-code, .remark-inline-code { font-family: 'Ubuntu Mono'; background: none; color: #66f; }
+         .remark-code, .remark-inline-code {
+             font-family: 'Ubuntu Mono';
+             background: none;
+             color: #66f;
+             font-size: 0.85em;
+         }
          .remark-code-line-highlighted     { background-color: #373832; }
          .remark-code { border-radius: 5px; }
          .pull-left {
