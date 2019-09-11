@@ -2,7 +2,11 @@
 
 * Show how newer languages are easier to C++.  Ask why still use C++?
   - Performance
-  - Flexibility (finer control)
+  - Flexibility
+    + finer control over facilities used
+    + generated machine code
+    +  memory footprint/usage pattern
+  - Hardware access
 
 # Performance
 
@@ -13,6 +17,9 @@
 * Systemic issues
 > Lesser the number of abstractions/layers between you and raw metal, the better.
 * Explain C++ exposing the underlying machine openly by having minimal abstractions
+* For the ones where abstractions are provided, they’re zero cost!
+> What distinguishes C++ from most other languages is that, while the other languages have implemented these abstractions at the cost of runtime performance, C++ has always strived to implement its abstractions at zero cost at runtime.
+> Only language that provides programmers the ability to write an expressive and robust code base while still having the ability to target almost any hardware platform or real-time requirements.
 * C++ believes in programmer intelligence since it knows its speakers are system programmers or the like
 
 # Data: C++ vs Others
@@ -22,7 +29,10 @@
 * Makes programmers life easy in calculating say `2^73 * 4` but internally [PyLong](https://docs.python.org/3/c-api/long.html#c.PyLongObject) is nothing but a C `struct` doing software emulation of an arbitrarily long integer object
 * Flexibility is lost since all the time you mightn’t need a big int
 * In most scripting languages, everything is an object i.e. there’s a wrapper around the real data, which also has metadata around the type, reflection-related data, etc.
-* In C++, if you need big ints in a particular module, you can include a library only for it; it’ll provide a data type for which you can create an object. While native data types happily exists as POD
+* In C++, if you need big ints in a particular module, you can include a library only for it; it’ll provide a data type for which you can create an object. While native data types happily exists as POD.
+* Most languages allow you to place objects only in the heap i.e. every variable is actually a pointer to an object in the heap.  C++ allows you to place them in the stack (much faster) or heap depending on need.
+* Flexibility in each class deciding how memory allocations happen.
+* No garbage collector so no performance hit but still having almost no leaks with RAII.
 * Difference between language vs library
 * Other languages give a map/dictionary, vector, etc. in-built into the language while C++ stay minimal
 * Use a container of choice when you need it; even in that you’re not limited to the standard library

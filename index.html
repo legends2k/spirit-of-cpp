@@ -16,9 +16,10 @@
          h1, h2, h3 {
              font-family: 'Yanone Kaffeesatz';
              font-weight: 400;
+             margin-top: 4mm;
              margin-bottom: 0;
          }
-         h1 strong {
+         h1 strong, h2 strong, h3 strong {
              color: #009500;
              letter-spacing: .75mm;
          }
@@ -26,9 +27,9 @@
          .remark-slide-content h2 { font-size: 2em; }
          .remark-slide-content h3 { font-size: 1.6em; }
          .footnote {
-             position: absolute;
-             bottom: 2em;
+             bottom: 3em;
              font-size: 0.3cm;
+             display: block;
          }
          .footnote .red {
              color: #fa0000;
@@ -51,6 +52,7 @@
              text-decoration: none;
          }
          code {
+             word-spacing: normal;
              background: #e7e8e2;
              border-radius: 5px;
          }
@@ -90,7 +92,7 @@
          }
          .inverse h1, .inverse h2 {
              color: #f3f3f3;
-             line-height: 0.8em;
+             line-height: 1.2em;
              letter-spacing: 1mm;
              word-spacing: 2mm;
          }
@@ -170,6 +172,12 @@
              highlightStyle: 'monokai',
              highlightLines: true
          });
+
+         // https://github.com/gnab/remark/issues/72#issuecomment-419693263
+         remark.macros.img = function (tooltip, width) {
+             var url = this;
+             return '<img title="' + tooltip + '" src="' + url + '" style="width: ' + width + '" />';
+         };
         </script>
     </body>
 </html>
