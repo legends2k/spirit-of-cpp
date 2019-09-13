@@ -3,7 +3,7 @@ count: false
 
 # The **Spirit** of C++
 
-## Sundaram Ramaswamy
+### Sundaram Ramaswamy
 
 ---
 
@@ -85,6 +85,127 @@ So many retries! Aargh 🤦
 # **Intuitiveness**: Epic fail!
 
 Output varies for same program between compilers!?! Oh mama 😲
+
+---
+class: center, inverse
+count: false
+
+# Let’s write an `ipow2()`
+
+---
+class: center, inverse
+count: false
+
+# Let’s write an `ipow2()`
+<br />
+## Quick quiz: **What’s the size of `int`?**
+
+---
+class: center, inverse
+count: false
+
+# Let’s write an `ipow2()`
+<br />
+## Quick quiz: **What’s the size of `int`?**
+<br />
+## Answer: **It depends!**
+
+<small>(as always)</small>
+
+---
+
+## Built-in Data Types / Primitives ([example](https://godbolt.org/z/UW0rCc))
+
+.pull-left[
+### Integral Types.red[¹]
+
+* `char` .little[(≥ 8-bits == 1 byte)]
+* `short` .little[(≥ 16-bits)]
+* `int` .little[(≥ 16-bits)]
+* `long` .little[(≥ 32-bits)]
+* `long long`  .little[(≥ 64-bits)]
+]
+
+.pull-right[
+### Floating-point Types
+
+* `float` .little[(32-bit)].red[²]
+* `double` .little[(64-bit)].red[²]
+* `long double` .little[(usually 80, 96 or 128 bits)]
+]
+
+`sizeof(char) <= sizeof(short) <= sizeof(int) <= sizeof(long) <= sizeof(long long)`
+
+.left[### Other Types]
+- `void`
+- `bool`
+- Pointer types
+  * **Width**: executable’s bit width; check `sizeof(void*)`
+  * Arithmetic based on pointed-to type e.g. `int *p; ++p;` moves `p` by `sizeof(int)`
+- Array types e.g. `int[2], char[6]`
+
+.footnote[.red[¹] : variants of `unsigned` and `signed` ([two’s complement](https://en.wikipedia.org/wiki/Two%27s_complement))]
+.footnote[.red[²]: Not guaranteed to be, but mostly, IEEE-754 floats]
+
+---
+
+## C++ Standard .little[[(ISO/IEC 14882:2017)](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/n4659.pdf)]
+
+* Modern language users are at the mercy of their singular implementations
+
+* **The ISO C++ standard guards C++ programmers with certain guarantees**
+
+* **Programs adhering to the standard are always portable and work** <br /> .little[e.g. Compile a 20-year old program `g++ -std=c++98 old.cpp` even today on any platform with a compiler and its output works]
+
+* Standard precisely defines many aspects of a program: **well-defined** ← this is home 🏠
+
+* Standard loosely defines some aspects .little[(_Implementation-defined_,  _Unspecified_ and [_Undefined behaviour_](https://stackoverflow.com/q/2397984/183120))]
+  - for exotic architectures having C++ compilers <br /> .little[e.g. [Unisys Servers with 9-bit bytes and 36-bit ints](https://stackoverflow.com/a/6972551/183120) programmable in C and C++ (not Python or JS — _sorry!_)]
+  - for freedom to compiler-authors .little[e.g. to optimize aggressively, compete with other implementations, …]
+
+> But it works on my machine!?
+>
+> **Say, if you survived a wrong side drive on a highway at midnight, would you argue its correct?**
+
+???
+e.g. array access out of bounds, accessing a zombie object, null pointer dereference and many more!
+
+
+---
+
+``` c++
+#include <cstdint>   // ← fixed width integers
+#include <limits>
+#include <optional>
+#include <iostream>
+
+std::optional<uintmax_t> ipow2(unsigned pow) {
+  // evaluated and folded into a constant number at compile-time
+  constexpr uint8_t max_digits = std::numeric_limits<uintmax_t>::digits;
+  if (pow >= max_digits)
+    return {};
+
+  uintmax_t value = 1;
+  value <<= pow;
+  return value;
+}
+
+int main(int argc, char** argv) {
+  if (argc >= 2) {
+    auto const pow = std::strtoul(argv[1], nullptr, 0);
+    auto const result = ipow2(pow);
+    if (result)
+      std::cout << *result << '\n';
+    else
+      std::cout << "Power beyond limits!\n";
+  }
+}
+
+```
+
+* **Use [fixed-width integers](https://devdocs.io/c/types/integer)**:  `uint8_t`, `int_fast16_t`, `int32_t`, `uintptr_t`, …
+* Use `short`, `int`, `long` … when you _know_ minimum (guaranteed) width is enough
+  - Chromium has `int`s but [they only’ve 32 and 64 builds](https://www.chromium.org/chromium-os/how-tos-and-troubleshooting/chromiumos-architecture-porting-guide) and specific compilers
 
 ---
 class: center, middle, inverse
@@ -300,8 +421,6 @@ count: false
 # 1. Free-standing **function**s
 
 ``` c++
-static_assert(sizeof(int) == 8);  // evaluated at compile-time and stripped
-
 int add(int x, int y) {
   return x + y;
 }
@@ -314,12 +433,12 @@ int main() {
 
 Simple, _complete_ program: no classes, no libraries.
 
-These functions get compiled into plain assembly instructions; static type system means [types vanish once compiled](https://godbolt.org/z/YZCG8u).
-
 - **Compile-time**: types, qualifiers, functions, structs, classes, templates, etc. exist.
 - **Run-time**: Oodles of relocatable machine code your machine loves to gobble!
 
-> **Machine**: Who’s `int`?  I’ve never heard of her.
+While languages compiling to byte code, keep type information at run-time too for _reflection_, _garbage collection_, _optimization_, … C++ strips them and spits plain assembly; [most things vanish into 0 s and 1 s](https://godbolt.org/z/YZCG8u).
+
+> **Machine**: `int`?  Who’s she?  I’ve never heard of her.
 
 ---
 
@@ -488,55 +607,3 @@ struct CLCDDisplay : public IDisplay {
   - .tag[Flexibility] Python provides list and dictionary as a language-feature, while C++ gives it as library facilities
 
 > **You only pay for what you use**. — C++ Design Guidelines
-
----
-
-# C++ Standardise / Jargon
-
-* Standard has many aspects of the program **well-defined**.  This is home.
-* It has to leave some aspects loosely-defined for
-  - exotic platforms e.g. [Unisys Servers with 9-bit bytes and 36-bit ints](https://stackoverflow.com/a/6972551/183120) programmable in C and C++ (no Python — _sorry!_)
-  - freedom of compiler-authors e.g. to optimize aggressively, compete with other implementations, etc.
-* **Implementation-defined**: Compiler can do what it wants but has to document it in the manual.
-* **Unspecified**: Compiler can do whatever it wants and needn’t document it either.
-* **[Undefined behaviour](https://stackoverflow.com/q/2397984/183120)**: Nothing is defined and the compiler can do what it wants.  All bets are off!
-  - You can’t go to the author even if your program formats your hard disk
-  - e.g. array access out of bounds, accessing a zombie object, null pointer dereference and many more!
-
-> Just because you can drive on a highway in the opposite direction at midnight and survive, would you do it regularly?
-
----
-
-## Built-in Data Types / Primitives ([example](https://godbolt.org/z/UW0rCc))
-
-.pull-left[
-### Integral Types.red[¹]
-
-* `char`     (== 1 byte)
-* `char16_t` (>= 2 bytes)
-* `char32_t` (>= 4 bytes)
-* `short`    (>= 2 bytes)
-* `int`      (>= short)
-* `long`     (>= 4 bytes)
-* `long long` (>= 8 bytes)
-
-]
-
-.pull-right[
-### Floating-point Types
-
-* `float` (32-bit; IEEE-754 specified single-precision)
-* `double` (64-bit; IEEE-754 specified double-precision)
-* `long double` (unspecified: can be 80, 96 or 128 bits depending on compiler and machine)
-
-]
-
-.left[### Other Types]
-- `void`
-- `bool` (implementation-defined)
-- Pointer types
-  * Width: executable’s bit width; check `sizeof(void*)`
-  * Arithmetic based on pointed-to type e.g. `int *p; ++p;` moves `p` by `sizeof(int)`
-- Array types e.g. `int[2], char[6]`
-
-.footnote[.red[¹] : variants of `unsigned` and `signed` — usually [two’s complement](https://en.wikipedia.org/wiki/Two%27s_complement)]

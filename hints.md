@@ -36,7 +36,7 @@
 * Difference between language vs library
 * Other languages give a map/dictionary, vector, etc. in-built into the language while C++ stay minimal
 * Use a container of choice when you need it; even in that you’re not limited to the standard library
-* Hardware implementation vs software implementation of an algorithm
+* Variables aren’t labels like in Python
 
 See Also: https://stackoverflow.com/questions/538551/handling-very-large-numbers-in-python
 
@@ -55,3 +55,12 @@ See Also: https://stackoverflow.com/questions/538551/handling-very-large-numbers
   - Programmers bank on the guaranteed given by the standard to get predictable behaviour
 * Difference between standard library vs third party library
 
+
+# Feedback
+
+1. Show SSE2 register as comment
+2. _Translating to Software_ needs more clarification
+3. First explain about critical and non-critical then show other slides related to perf
+4. Give a concrete example of a non-critical software
+5. Insert a usage slide inbetween _Virtual methods_ and _Memory Layout_; make a it a `IEditorPlugin` example
+6. Don’t show, just tell _C++ Constituents_?
