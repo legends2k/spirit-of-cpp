@@ -13,7 +13,9 @@ count: false
 ## Within C++, there is a much **smaller** and **cleaner** language struggling to get out.
 ### Bjarne Stoustrup
 
-It’s easy to get lost in the details, but don’t.  **Look for intuitions and at the big picture.**
+It’s easy to get lost in the details; don’t.
+
+**Look for intuitions and at the big picture.**
 
 ---
 .left-column[
@@ -80,11 +82,11 @@ uint64_t x3 = 1   << 63;  // GCC: shift count >= type width
 class: center, middle, inverse
 count: false
 
-So many retries! Aargh 🤦
+So many retries! Aargh!! 🤦
 
 # **Intuitiveness**: Epic fail!
 
-Output varies for same program between compilers!?! Oh mama 😲
+Output varies for same program between compilers!?! Oh mama! 😲
 
 ---
 class: center, inverse
@@ -98,7 +100,7 @@ count: false
 
 # Let’s write an `ipow2()`
 <br />
-## Quick quiz: **What’s the size of `int`?**
+## Pop quiz: **What’s the size of `int`?**
 
 ---
 class: center, inverse
@@ -106,20 +108,20 @@ count: false
 
 # Let’s write an `ipow2()`
 <br />
-## Quick quiz: **What’s the size of `int`?**
+## Pop quiz: **What’s the size of `int`?**
 <br />
-## Answer: **It depends!**
+## Answer: **No fixed size!**
 
-<small>(as always)</small>
+Ask your compiler: `sizeof(int)`; _never assume_ 🤔
 
 ---
 
-## Built-in Data Types / Primitives ([example](https://godbolt.org/z/UW0rCc))
+## Built-in Data Types
 
 .pull-left[
 ### Integral Types.red[¹]
 
-* `char` .little[(≥ 8-bits == 1 byte)]
+* `char` .little[(≥ 8-bits == 1 byte)].red[2]
 * `short` .little[(≥ 16-bits)]
 * `int` .little[(≥ 16-bits)]
 * `long` .little[(≥ 32-bits)]
@@ -129,39 +131,43 @@ count: false
 .pull-right[
 ### Floating-point Types
 
-* `float` .little[(32-bit)].red[²]
-* `double` .little[(64-bit)].red[²]
+* `float` .little[(32-bit)].red[3]
+* `double` .little[(64-bit)].red[3]
 * `long double` .little[(usually 80, 96 or 128 bits)]
+
+.little[
+_Assuming anything more than below rule is [risky](https://godbolt.org/z/UW0rCc)_!]
 ]
 
-`sizeof(char) <= sizeof(short) <= sizeof(int) <= sizeof(long) <= sizeof(long long)`
+**`sizeof(char) ≤ sizeof(short) ≤ sizeof(int) ≤ sizeof(long) ≤ sizeof(long long)`**<br />
 
 .left[### Other Types]
 - `void`
 - `bool`
-- Pointer types
-  * **Width**: executable’s bit width; check `sizeof(void*)`
-  * Arithmetic based on pointed-to type e.g. `int *p; ++p;` moves `p` by `sizeof(int)`
-- Array types e.g. `int[2], char[6]`
+- Pointer types e.g. `int*`, `unsigned char**`, `bool*`<br />
+.little[Arithmetic based on pointed-to type e.g. `int *p; ++p;` moves `p` by `sizeof(int)`]
+- Array types e.g. `int[2], char[6][5]`
 
-.footnote[.red[¹] : variants of `unsigned` and `signed` ([two’s complement](https://en.wikipedia.org/wiki/Two%27s_complement))]
-.footnote[.red[²]: Not guaranteed to be, but mostly, IEEE-754 floats]
+.footnote[.red[¹]: variants of `unsigned` and `signed` ([two’s complement](https://en.wikipedia.org/wiki/Two%27s_complement))]
+.footnote[.red[²]: A byte needn’t be 8 bits; it’s whatever `char`’s bit width is 😳]
+.footnote[.red[³]: Not guaranteed to be, but mostly, IEEE-754 floats]
 
 ---
 
 ## C++ Standard .little[[(ISO/IEC 14882:2017)](http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2017/n4659.pdf)]
 
-* Modern language users are at the mercy of their singular implementations
+* Many modern language users are at the mercy of one implementation
 
-* **The ISO C++ standard guards C++ programmers with certain guarantees**
+* **The ISO C++ standard guards C++ programmers with certain guarantees** <br />.little[A contract between language users and compiler writers ] 🤝
 
-* **Programs adhering to the standard are always portable and work** <br /> .little[e.g. Compile a 20-year old program `g++ -std=c++98 old.cpp` even today on any platform with a compiler and its output works]
+* **Programs adhering to the standard are always portable and work** <br />
+.little[e.g. Compile a 20-year old program `g++ -std=c++98 old.cpp` _even today on any platform_ with a compiler; it works] <br />
 
-* Standard precisely defines many aspects of a program: **well-defined** ← this is home 🏠
+* Standard precisely defines many aspects of a program: **well-defined** ← this is 🏠
 
-* Standard loosely defines some aspects .little[(_Implementation-defined_,  _Unspecified_ and [_Undefined behaviour_](https://stackoverflow.com/q/2397984/183120))]
+* Standard loosely defines some aspects .little[(_Implementation-defined_,  _Unspecified_ and [_Undefined behaviour_](https://stackoverflow.com/q/2397984/183120))] ☠
   - for exotic architectures having C++ compilers <br /> .little[e.g. [Unisys Servers with 9-bit bytes and 36-bit ints](https://stackoverflow.com/a/6972551/183120) programmable in C and C++ (not Python or JS — _sorry!_)]
-  - for freedom to compiler-authors .little[e.g. to optimize aggressively, compete with other implementations, …]
+  - for freedom to compiler-authors .little[different compilers, varying implementations: a healthy competition]
 
 > But it works on my machine!?
 >
@@ -174,15 +180,15 @@ e.g. array access out of bounds, accessing a zombie object, null pointer derefer
 ---
 
 ``` c++
-#include <cstdint>   // ← fixed width integers
-#include <limits>
+#include <cstdint>   // ← fixed-width integer types
+#include <limits>    // ← query type limits from compiler
 #include <optional>
 #include <iostream>
 
 std::optional<uintmax_t> ipow2(unsigned pow) {
-  // evaluated and folded into a constant number at compile-time
-  constexpr uint8_t max_digits = std::numeric_limits<uintmax_t>::digits;
-  if (pow >= max_digits)
+  // Future-proof by not limiting to uint64_t.
+  // Constant-time constant queried from compiler; thanks to static typing
+  if (pow >= std::numeric_limits<uintmax_t>::digits)
     return {};
 
   uintmax_t value = 1;
@@ -192,180 +198,77 @@ std::optional<uintmax_t> ipow2(unsigned pow) {
 
 int main(int argc, char** argv) {
   if (argc >= 2) {
-    auto const pow = std::strtoul(argv[1], nullptr, 0);
+    auto const pow = std::strtoul(argv[1], nullptr /*str_end*/, 10 /*base*/);
     auto const result = ipow2(pow);
     if (result)
       std::cout << *result << '\n';
     else
-      std::cout << "Power beyond limits!\n";
+      std::cout << "Power beyond machine limits!\n";
   }
 }
-
 ```
 
-* **Use [fixed-width integers](https://devdocs.io/c/types/integer)**:  `uint8_t`, `int_fast16_t`, `int32_t`, `uintptr_t`, …
-* Use `short`, `int`, `long` … when you _know_ minimum (guaranteed) width is enough
-  - Chromium has `int`s but [they only’ve 32 and 64 builds](https://www.chromium.org/chromium-os/how-tos-and-troubleshooting/chromiumos-architecture-porting-guide) and specific compilers
-
----
-class: center, middle, inverse
-count: false
-
-# OK.  Let’s order food.
-
----
-
-# At a Restaurant
-
-- For **every item** you order, the _waiter_
-
-  - goes to the kitchen
-
-  - checks availability
-
-  - acknowledges its availability
-
-  - makes an entry
-
-- requests food preparation
-
-- checks prepared items against register
-
-- delivers to you
-
-> **Terrible. Turn-around. Time**
->
-> You get hungry + angry → `hangry` 😠
-
-
----
-
-# At Home
-
-- For **every item** you order, _Swiggy_
-
-  - goes to the kitchen
-
-  - checks availability
-
-  - acknowledges its availability
-
-  - makes an entry
-
-- requests food preparation
-
-- checks prepared items against register
-
-- delivers to you
-
-> You tip the man **delivering 30 mins later**!
+* **Use [fixed-width integers](https://devdocs.io/c/types/integer)**:  `uint8_t`, `int_fast16_t`, `int32_t`, `uintptr_t`, … <br />
+  .little[`unsigned`: beware of wrap around behaviour; decrement with extreme care e.g. `uint8_t x = 0; --x; // x is now 255`]
+* Use `short`, `int`, `long`, etc. when you’re _sure_ minimum (guaranteed) width is enough <br />
+  .little[Chromium has `int`s but use only a few compilers (all having 32-bit `int`) and [target only `i686`, `x86_64` and `ARM32` builds](https://www.chromium.org/chromium-os/how-tos-and-troubleshooting/chromiumos-architecture-porting-guide) ]
 
 ---
 
 class: center, middle, inverse
-count: false
 
-# Part 1
-
-# **Why?**
+# Yeah.. yeah! Still **2⁸⁰**?
 
 ---
 
-## Different Settings, Different Requirements
+# **Critical** vs **Non-Critical** Software
 
-* At a restaurant, you expect a high turn-around time
+* _Turn-around_ vs _throughput_: different settings, different expectations
+
+* Ordering food at a restaurant vs ordering for home delivery 🍜<br />
   - Wasting time on **avoidable**, petty procedures means an overall delay in eating
+  - Wasting 5 mins for a smoke is OK when it’d be 30 mins restaurant ↔ home
 
-* When ordering from home, you know it’ll take time
-  - Wasting 5 mins is OK when it’s 30 mins b/w restaurant ↔ home (bottleneck elsewhere)
+* When **bottleneck is elsewhere**, optimizing every instruction/data is pointless
 
 > Shaving off a few (unnoticeable) microseconds when overall lag would be in seconds is _**pessimisation**._
 
-### Translating to Software
-
-* **Server-side/cloud code**: network latency is the overarching bottleneck
-
-* **GUI application, I/O heavy code**: User-input/disk-access is the biggest latency
-
----
-
-class: left, middle, inverse
-
-## We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet **we should not pass up our opportunities in that critical 3%**.
-
-### .right[Donald Knuth / Tony Hoare]
-
-.center[We’ll discuss sane defaults when writing C++ software — just good habits, not pessimizations.]
+* Few examples of time-wise non-critical software
+  - Server-side / cloud code looking up voluminous database <br />
+.little[**Overarching bottleneck**: disk access, network lag]
+  - Content generators e.g. Doxygen <br />
+.little[**Output quality matters but not time-taken; isn’t live**]
+  - Telemetry, admin/maintenance scripts _and many more!_
 
 ---
 
-## Languages for **non-critical** software <small>(C#, Python, JS, …)</small>
+class: left, inverse
+name: knuth-1
 
-* .tag[Performance] Most run on a VM with garbage collection: when network lag, I/O latency or user input is the bottleneck, wasting a few milliseconds/operation is OK.
-
-* .tag[Flexibility] Assumes programmers doesn’t know hardware; sacrifices finer control for more features e.g. well-polished data structures like _dictionaries, big integers, …_
-
-* .tag[Hardware] Machine abstracted away as much as possible to relieve programmer from worrying about both hardware intricacies and problem domain.
-
-## Languages for **critical** software <small>(C++, C, Rust, …)</small>
-
-* .tag[Performance] Provides _zero-overhead abstractions_.red[1] by inserting very minimal code; doesn’t get in the way of programmer talking to hardware.  No VM, no GC i.e. <br />  _no middleman — no comission_.
-
-* .tag[Flexibility] Exposes richness of hardware to extract more from it; doesn’t insult programmer’s intelligence.  Direct access to CPU/GPU/OS facilities, _yum_!
-
-* .tag[Hardware] Enables authoring device drivers, virtual machines.red[2], simulators, …
-
-<div>
-.footnote[.red[¹] : `std::vector` or `std::map` should perform _almost_ like a vector or red-black tree hand-coded in assembly]
-
-.footnote[.red[²] : Not system virtual machine (like VMWare, Qemu, VirtualBox, …), but **[process virutal machine](https://en.wikipedia.org/wiki/Virtual_machine#Process_virtual_machines)** (like JVM, CLR, …)]
-</div>
+## Good engineers =  **right tool for right job**
 
 ---
 
-class: center, middle, inverse
-count: false
+template: knuth-1
+name: knuth-2
 
-# Good engineers **use the right tool for the right job**.
+<br />
 
----
+.little[## We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil. Yet **we should not pass up our opportunities in that critical 3%**.
 
-# Problems with unsuitable tools
-
-* Non-availability of facilities
-* Community’s mindset will be orthogonal
-* Imposes a mental model not suitable for the task
-* Examples
-  - using Python to write a virtual machine
-  - using C++ for client-side browser scripting
-  - using JavaScript for … (_never mind_)
-
-> If all you have is a hammer, everything looks like a nail. .right[— [Law of the Instrument](https://en.wikipedia.org/wiki/Law_of_the_instrument)]
-
-* Learning more than one language, tool or framework pays off in the long run
-  - Exposes you to more techniques and idioms from different spheres
-
-  - Making your mental model flexible, free-thinking
-
-  - Leads to making right choice in choosing a tool for a problem
+### .right[Donald Knuth / Tony Hoare]]
 
 ---
 
-# Hardware vs Software
+template: knuth-2
 
-* Hardware vendors make hardware dedicated for some algorithms
-  - .tag[Performance] **Using dedicated hardware is a lot faster**
-  - E.g. [GPU](http://en.wikipedia.org/wiki/GPU)s for 3D data and pixels, hardware decoders for MP3, etc.
-  - .tag[Hardware] SIMD instruction sets to perform multiple operations in one CPU cycle.  With C++ you can access them; [live example](http://coliru.stacked-crooked.com/a/256d134083aa6118) of 4-vector addition using [SSE2](https://en.wikipedia.org/wiki/SSE2)
-* When such hardware is non-existent, software implementation is provided as a fallback
-  - However many languages project nothing more than a simple model of x86; some don’t even do that!
---------------------------------------------------------------------------------
-* Python’s `int` has arbitrary-precision because internally [**all** integers are big ints](https://rushter.com/blog/python-integer-implementation/); software emulation as hardware natively can’t.
-  - Every programmer is penalized for greater flexibility
-  - Programmer is never exposed to system’s native `int`, so that expressions like this work: `2 ** 80 = 1208925819614629174706176`
-* C++ doesn’t provide it since your machine doesn’t have one!
-  - Most machines can natively only do upto 64-bit math since they’re 64-bit CPUs
-  - .tag[Flexibility] Programmer needing _big int_ can always include a library or write a custom implementation e.g. [GNU Multiple Precision](https://gmplib.org/) library is one of the fastest
+C++ is keen about _that_ 3% — as a language community.
+
+We mean to _eek out the very last drop of juice a CPU’s got!_
+
+???
+
+We’ll discuss sane defaults when writing C++ software — just good habits, not pessimizations.
 
 ---
 
@@ -396,7 +299,7 @@ Ever wondered what language virtual machines are written in?
   - Mozilla’s [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
   - Google’s [V8](https://v8.dev/)
 
-It’s justified that browsers are written in C++.
+_The Need for Speed_ justifies writing browsers in C++ 🏁
 
 ---
 
@@ -409,18 +312,10 @@ count: false
 
 ---
 
-class: center, middle, inverse
-count: false
-
-# Part 2
-
-# **Code**
-
----
-
-# 1. Free-standing **function**s
+# Free-standing **function**s
 
 ``` c++
+// Simple, complete program: no classes, no libraries.
 int add(int x, int y) {
   return x + y;
 }
@@ -431,14 +326,66 @@ int main() {
 }
 ```
 
-Simple, _complete_ program: no classes, no libraries.
-
 - **Compile-time**: types, qualifiers, functions, structs, classes, templates, etc. exist.
-- **Run-time**: Oodles of relocatable machine code your machine loves to gobble!
+- **Run-time**: Oodles of binary code your machine loves to gobble!
 
-While languages compiling to byte code, keep type information at run-time too for _reflection_, _garbage collection_, _optimization_, … C++ strips them and spits plain assembly; [most things vanish into 0 s and 1 s](https://godbolt.org/z/YZCG8u).
+> C++ data types **inherit nothing** — both in-built and custom.  No compiler-supplied base `Object` under the hood.
 
-> **Machine**: `int`?  Who’s she?  I’ve never heard of her.
+* Languages compiling to byte code, keep type information.red[1] at run-time too.<br />
+.little[VM needs them for _reflection_, _garbage collection_, _JIT optimizations_, …]
+* C++ strips them and spits plain assembly. <br />
+.little[[Data and code vanish into zeros and ones](https://godbolt.org/z/YZCG8u).  _Raw binary_, just as advertised 👍]
+
+.footnote[.red[¹]: Commonly called _boxed datatypes_ e.g. `Integer` inheriting `Java.lang.Object` wraps the actual integer. C++’s `int` is machine integer.]
+
+---
+
+## Languages for **non-critical** software <small>(C#, Python, JS, …)</small>
+
+* .tag[Performance] Most run on a VM.red[1] with garbage collection.
+
+* .tag[Flexibility] Sacrifices finer control for more features.<br />
+.little[e.g. reflection, garbage collection, rich built-in types like _lists, dictionaries/maps, big integers_, … ]
+
+* .tag[Hardware] Abstracts machine away as much as possible.<br />
+.little[Assumes programmers doesn’t know hardware; relieves programmer from worrying about hardware intricacies]
+
+## Languages for **critical** software <small>(C++, C, Rust, …)</small>
+
+* .tag[Performance] _Zero-overhead abstractions_.red[2]; as close to hardware as possible but not closer.<br />
+.little[Easy to reason about the machine code generated for your program.]
+
+* .tag[Flexibility] You choose what you want. _You only pay for what you use_.red[3].<br />
+.little[Programmer, not the language, is in charge. Believes programmer knows what s/he doing.]
+
+* .tag[Hardware] Low-level access enables authoring kernel, virtual machines, …<br />
+.little[Direct access to CPU/GPU/OS facilities, _yum_!  No VM, no GC  _no middleman — no comission_.]
+
+<div>
+.footnote[.red[¹]: Not system virtual machine (like VMWare, Qemu, VirtualBox, …), but **[process virutal machine](https://en.wikipedia.org/wiki/Virtual_machine#Process_virtual_machines)** (like JVM, CLR, Python interpreter, …)]
+
+.footnote[.red[²]: `std::vector` or `std::map` should perform _almost_ like a vector or red-black tree hand-coded in assembly]
+
+.footnote[.red[³]: A key design guideline of the C++ standards committee; another is _portability_.]
+</div>
+
+---
+
+## Hardware vs Software
+
+* Hardware vendors make hardware dedicated for some algorithms
+  - .tag[Performance] **Using dedicated hardware is a lot faster**
+  - E.g. [GPU](http://en.wikipedia.org/wiki/GPU)s for 3D data and pixels, hardware decoders for MP3, etc.
+  - .tag[Hardware] SIMD instruction sets to perform multiple operations in one CPU cycle.  With C++ you can access them; [live example](http://coliru.stacked-crooked.com/a/256d134083aa6118) of 4-vector addition using [SSE2](https://en.wikipedia.org/wiki/SSE2)
+* When such hardware is non-existent, software implementation is provided as a fallback
+  - However many languages project nothing more than a simple model of x86; some don’t even do that!
+--------------------------------------------------------------------------------
+* Python’s `int` has arbitrary-precision because internally [**all** integers are big ints](https://rushter.com/blog/python-integer-implementation/); software emulation as hardware natively can’t.
+  - Every programmer is penalized for greater flexibility
+  - Programmer is never exposed to system’s native `int`, so that expressions like this work: `2 ** 80 = 1208925819614629174706176`
+* C++ doesn’t provide it since your machine doesn’t have one!
+  - Most machines can natively only do upto 64-bit math since they’re 64-bit CPUs
+  - .tag[Flexibility] Programmer needing _big int_ can always include a library or write a custom implementation e.g. [GNU Multiple Precision](https://gmplib.org/) library is one of the fastest
 
 ---
 
@@ -476,6 +423,9 @@ void __Widget_Scroll(__Widget* w, int clicks) {
 ---
 
 # What are little objects made of?
+
+Show what’s a variable made of: raw memory interpreted by CPU based on type.
+Show the stack and heap; show the stack growing and explain.
 
 ``` c++
             Widget w1              Widget w2              Widget w2
