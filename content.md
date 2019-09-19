@@ -9,7 +9,9 @@ class: center, middle, inverse
 class: center, middle, inverse
 
 ## Within C++, there is a much **smaller** and **cleaner** language struggling to get out.
-### Bjarne Stoustrup
+### .right[— Bjarne Stroustrup, creator of C++]
+
+<br /><br />
 
 It’s easy to get lost in the details; don’t.
 
@@ -223,11 +225,11 @@ class: center, middle, inverse
 // Simple, complete program: no classes, libraries or includes.      +-------------+
 int add(int x, int y) {            //     +-------------+            |    free     |
   return x + y;                    //     |    free     |            |             |
-}                                  //  S  |             | ←add()    +-------------+
-                                   //  T  |             |            | int, int    |
-int main(int argc, char** argv) {  //  A  +-------------+   add()→  +-------------+
-  int a = 1, b = -4;               //  C  | int, char** |            | int, char** |
-  return add(a, b);                //  K  | int, int    | ← main → | int, int    |
+}                                  //  S  |             | <-- add()  +-------------+
+                                   //  T  |             |            | int  int    |
+int main(int argc, char** argv) {  //  A  +-------------+  add() --> +-------------+
+  int a = 1, b = -4;               //  C  | int  int    |            | int  int    |
+  return add(a, b);                //  K  | int  char** | <- main -> | int  char** |
 }                                  //     +-------------+            +-------------+
 ```
 
@@ -288,14 +290,14 @@ float a = 0.5;  // redefinition error
 char c = 0xde;      // value: 0xde (c), loc = 1000 (&c), type: char (gone at runtime)
 int a = 3203338898;                     // allocate sizeof(int) bytes, initilize to 1
 short *b = reinterpret_cast<short*>(&a);     // *b = 0x1292 (on a big-endian machine)
-char *p = &c;                        ╭━━━━━━━━━━━━━━━━━━┈┈┈┈┈
-                                     ▼
- …   1000   1001   1002   …    ╭━ short ━╮╭━━━━ char* ━━━━╮
+char *p = &c;                          ,-------------------------------------
+                                      ↓
+ …   1000   1001   1002   …     /-- short --\ /--------- char* ---------\
 ----------------------------------------------------------------------------
 .. | 0xde | 0xad | 0xbe | 0xef | 0x12 | 0x92 | 0x00 | 0x00 | 0x10 | 0x00 | ..
 ----------------------------------------------------------------------------
-      ▲         ╰━━━━━ int ━━━━━╯                ┃
-      ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
+      ↑          \----------- int ----------/                 |
+       `------------------------------------------------------'
 ```
 
 ---
@@ -304,12 +306,12 @@ char *p = &c;                        ╭━━━━━━━━━━━━━�
 
 .pull-left[
 ### Stack
-- Automatic allocation and deallocation
+- **Automatic** allocation and deallocation
 .little[- Alloc/dealloc order: lexical/reverse lexical
 ]
-- Much faster than heap
+- **Fast**: _really_ fast! 🚀
 .little[
-- Allocation is a mere pointer move
+- Allocation is a mere register increment/decrement
 - Spatial and temporal coherence
 ]
 - Limited scope
@@ -321,18 +323,22 @@ char *p = &c;                        ╭━━━━━━━━━━━━━�
 .little[
 - Default MiB/thread: 2 ([GCC](https://stackoverflow.com/a/32543529/183120)), 1 ([MSVC](https://docs.microsoft.com/en-us/cpp/build/reference/f-set-stack-size?view=vs-2019))
 ]
+- Unexposed in most languages 😱
 ]
 
 .pull-right[
 ### Heap
-- Manual allocation and deallocation
+- **Manual** allocation and deallocation
 .little[- Manual memory management is a _land mine_ 💥
-- Over 40 years of experience proves humans are bad at it; use smart pointers `make_unique`, `make_shared`
+- 40 years of experience proves we are bad at it; be smart, use `unique_ptr`, `shared_ptr`, `weak_ptr`, `vector`, `string` …
 - Never even write `new`, `malloc`, `CoTaskMemAlloc`, …
-- Know: `delete ≠ delete []`, `delete ≠ free()`
+- Know: `delete ≠ delete []`, `delete ≠ free()`, …
 ]
-- Alloc/dealloc involves OS calls (slow)
-.little[- Virtual memory, book keeping, correct CRT]
+- **Slow**: de/alloc involves OS call
+.little[
+- Virtual memory, book keeping, fragmentation
+- _Pointer chasing_ isn’t cache-friendly
+]
 - No scope; alive until manually freed
 - Practically no limit
 .little[([32-bit: 3 GiB, 64-bit: 16 EiB](https://softwareengineering.stackexchange.com/a/207390/4154))]
@@ -341,11 +347,11 @@ char *p = &c;                        ╭━━━━━━━━━━━━━�
 .left[> **Stack-allocate** if size known at compile-time, within scope and within size limit;  **heap-allocate** otherwise.]
 
 ``` c++
-void getItemCount(int* count);
-// GOOD                // BAD                 // UGLY
-int c;                 int* c = new int;      unique_ptr<int> c = make_unique<int>();
-getItemCount(&c);      getItemCount(c);       getItemCount(c.get());
-                       delete c;
+void loadCount(int* count);
+// GOOD              // BAD                  // UGLY
+int c = 0;           int* c = new int;       unique_ptr<int> c = make_unique<int>();
+loadCount(&c);       getCount(c);            getCount(c.get());
+                     delete c;
 ```
 
 ???
