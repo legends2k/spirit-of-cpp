@@ -249,17 +249,16 @@ int main() {
 .pull-left[
 * C++’s static type system expects all types, variables known at compile-time
 
-* Type = Size + Operations<br />
-.little[e.g. on x86, `int` loads `sizeof(int)` bytes to an int register, allows binary and arithmetic operations]
-
-* **Object = Space + Type → _Value_**
+* Type = _(Size, Operations)_<br />
+.little[e.g. `int` loads `sizeof(int)` bytes to an integer register;<br />allows binary and arithmetic operations.]
+* **Object = _(Type, Memory) → Value_**
   - Allocation + Initialization
-  - Value is interpreted based on type
+  - Value interpretation based on type
 ]
 
 .pull-right[
 * Most languages treat variable as stickers; labels stuck on objects
-.little[  - Types are associated with objects
+.little[- Types are associated with objects
 - Variables = handle to be (re)stuck on an object]
 
 ```python
@@ -267,8 +266,8 @@ int main() {
 > i = "hi"  # no error on reseat
 ```
 
-* Variable = Handle to location + Type<br />
-.little[Born, live and die with same type]
+* Variable = _(Type, Location, Value)_<br />
+.little[  - Born, live, die with same type and location]
 
 ```c++
 int a = 1;
@@ -277,19 +276,20 @@ float a = 0.5;  // redefinition error
 ]
 
 ### **Memory model**
-
+<!-- Great ASCII art reference -->
+<!-- http://xahlee.info/comp/unicode_ascii_art.html -->
 ```c
-int a = 3203338898;  // allocate sizeof(int) bytes and initilize to 1
-short *b = reinterpret_cast<short*>(&a);  // 4754 (on a big-endian machine)
-char c = 0xde;
-char *p = &c;                         ╭─────────────────────────────────────
-                                      ▼
- …   1000   1001   1002   …     /-- short --\ /--------- char* ---------\
+char c = 0xde;      // value: 0xde (c), loc = 1000 (&c), type: char (gone at runtime)
+int a = 3203338898;                     // allocate sizeof(int) bytes, initilize to 1
+short *b = reinterpret_cast<short*>(&a);            // 4754 (on a big-endian machine)
+char *p = &c;                        ╭━━━━━━━━━━━━━━━━━━┈┈┈┈┈
+                                     ▼
+ …   1000   1001   1002   …    ╭━ short ━╮╭━━━━ char* ━━━━╮
 ----------------------------------------------------------------------------
 .. | 0xde | 0xad | 0xbe | 0xef | 0x12 | 0x92 | 0x00 | 0x00 | 0x10 | 0x00 | ..
 ----------------------------------------------------------------------------
-      ⯅          \----------- int ----------/                 |
-       `.____________________________________________________.'
+      ▲         ╰━━━━━ int ━━━━━╯                ┃
+      ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 ```
 
 ---
