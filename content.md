@@ -310,7 +310,7 @@ char *p = &c;                        ╭━━━━━━━━━━━━━�
 - Much faster than heap
 .little[
 - Allocation is a mere pointer move
-- Locality of reference, temporal coherence
+- Spatial and temporal coherence
 ]
 - Limited scope
 .little[
@@ -318,7 +318,9 @@ char *p = &c;                        ╭━━━━━━━━━━━━━�
 - Can’t return local variable _address_
 ]
 - Limited size (configurable)
-.little[- Default MiB/thread: 2 ([GCC](https://stackoverflow.com/a/32543529/183120)), 1 ([MSVC](https://docs.microsoft.com/en-us/cpp/build/reference/f-set-stack-size?view=vs-2019))]
+.little[
+- Default MiB/thread: 2 ([GCC](https://stackoverflow.com/a/32543529/183120)), 1 ([MSVC](https://docs.microsoft.com/en-us/cpp/build/reference/f-set-stack-size?view=vs-2019))
+]
 ]
 
 .pull-right[
@@ -336,13 +338,18 @@ char *p = &c;                        ╭━━━━━━━━━━━━━�
 .little[([32-bit: 3 GiB, 64-bit: 16 EiB](https://softwareengineering.stackexchange.com/a/207390/4154))]
 ]
 
-### Memory Layout
+.left[> **Stack-allocate** if size known at compile-time, within scope and within size limit;  **heap-allocate** otherwise.]
 
 ``` c++
-
+void getItemCount(int* count);
+// GOOD                // BAD                 // UGLY
+int c;                 int* c = new int;      unique_ptr<int> c = make_unique<int>();
+getItemCount(&c);      getItemCount(c);       getItemCount(c.get());
+                       delete c;
 ```
 
 ???
+- Stack size is OS-dependant too: 8 MiB on macOS
 - Know: `delete` between runtimes are unequal!
 
 ---
