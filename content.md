@@ -156,10 +156,11 @@ _Assuming anything more than below rule is [risky](https://godbolt.org/z/UW0rCc)
 .little[e.g. Compile a 20-year old program `g++ -std=c++98 old.cpp` _even today on any platform_ with a compiler; it works] <br />
 
 * Standard precisely defines many aspects of a program: **well-defined** ← this is 🏠
-
 * Standard loosely defines some aspects .little[(_Implementation-defined_,  _Unspecified_ and [_Undefined behaviour_](https://stackoverflow.com/q/2397984/183120))] ☠
-  - for exotic architectures having C++ compilers <br /> .little[e.g. [Unisys Servers with 9-bit bytes and 36-bit ints](https://stackoverflow.com/a/6972551/183120) programmable in C and C++ (not Python or JS — _sorry!_)]
-  - for freedom to compiler-authors .little[different compilers, varying implementations: a healthy competition]
+.little[
+- for exotic architectures having C++ compilers <br /> .little[e.g. [Unisys Servers with 9-bit bytes and 36-bit ints](https://stackoverflow.com/a/6972551/183120) programmable in C and C++ (not Python or JS — _sorry!_)]
+- for freedom to compiler-authors .little[different compilers, varying implementations: a healthy competition]
+]
 
 > _But it works on my machine!?_
 >
@@ -200,10 +201,10 @@ int main(int argc, char** argv) {
 }
 ```
 
-* **Use [fixed-width integers](https://devdocs.io/c/types/integer)**:  `uint8_t`, `int_fast16_t`, `int32_t`, `uintptr_t`, … <br />
-  .little[`unsigned`: beware of wrap around behaviour; decrement with extreme care e.g. `uint8_t x = 0; --x; // x is now 255`]
+* **Use [fixed-width integers](https://devdocs.io/c/types/integer)**:  `uint8_t`, `int_fast16_t`, `int32_t`, `uintptr_t`, …
+.little[- `unsigned`: beware of wrap around behaviour; decrement with extreme care e.g. `uint8_t x = 0; --x; // x is now 255`]
 * Use `short`, `int`, `long`, etc. when you’re _sure_ minimum (guaranteed) width is enough <br />
-  .little[Chromium has `int`s but use only a few compilers (all having 32-bit `int`) and [target only `i686`, `x86_64` and `ARM32` builds](https://www.chromium.org/chromium-os/how-tos-and-troubleshooting/chromiumos-architecture-porting-guide) ]
+  .little[- Chromium has `int`s but use only a few compilers (all having 32-bit `int`) and [target only `i686`, `x86_64` and `ARM32` builds](https://www.chromium.org/chromium-os/how-tos-and-troubleshooting/chromiumos-architecture-porting-guide) ]
 
 ---
 
@@ -258,7 +259,7 @@ int main(int argc, char** argv) {  //  A  +-------------+   add()→  +---------
 - Value interpretation based on type]
 * Other languages hide locations
 .little[
-- But every variable is a pointer! e.g. CPython internally uses `PyObject*` for _every_ variable]
+- But every variable is a pointer! e.g. CPython internally uses [`PyObject*` for _every_ variable](https://stackoverflow.com/a/57380719/183120)]
 ]
 
 .pull-right[
@@ -296,6 +297,83 @@ char *p = &c;                        ╭━━━━━━━━━━━━━�
       ▲         ╰━━━━━ int ━━━━━╯                ┃
       ╰━━━━━━━━━━━━━━━━━━━━━━━━━━━╯
 ```
+
+---
+
+## 4. **Memory**
+
+.pull-left[
+### Stack
+- Automatic allocation and deallocation
+.little[- Alloc/dealloc order: lexical/reverse lexical
+]
+- Much faster than heap
+.little[
+- Allocation is a mere pointer move
+- Locality of reference, temporal coherence
+]
+- Limited scope
+.little[
+- Alive within current and deeper functions
+- Can’t return local variable _address_
+]
+- Limited size (configurable)
+.little[- Default MiB/thread: 2 ([GCC](https://stackoverflow.com/a/32543529/183120)), 1 ([MSVC](https://docs.microsoft.com/en-us/cpp/build/reference/f-set-stack-size?view=vs-2019))]
+]
+
+.pull-right[
+### Heap
+- Manual allocation and deallocation
+.little[- Manual memory management is a _land mine_ 💥
+- Over 40 years of experience proves humans are bad at it; use smart pointers `make_unique`, `make_shared`
+- Never even write `new`, `malloc`, `CoTaskMemAlloc`, …
+- Know: `delete ≠ delete []`, `delete ≠ free()`
+]
+- Alloc/dealloc involves OS calls (slow)
+.little[- Virtual memory, book keeping, correct CRT]
+- No scope; alive until manually freed
+- Practically no limit
+.little[([32-bit: 3 GiB, 64-bit: 16 EiB](https://softwareengineering.stackexchange.com/a/207390/4154))]
+]
+
+### Memory Layout
+
+``` c++
+
+```
+
+???
+- Know: `delete` between runtimes are unequal!
+
+---
+
+## 5. **User-defined** Types
+
+``` c++
+// 1. Using built-in
+typedef int Id;
+using GroupId = float;
+enum : uint8_t Weekends { Sat, Sun };
+
+// 2. Composite
+struct Point { float x; float y; };
+class Canvas {                      //  Canvas
+  Point origin;                     //  +-------+-------+-------+
+  int max_memory;                   //  | float | float |  int  |
+  void* data;                       //  +-------+-------+-------+
+
+public:
+  Canvas(float max);
+};                        //       /<--- c[0]  --->\ /<---- c[1] --->\
+                          //   ---+-----+-----+-----+-----+-----+-----+---
+// 3. Aggregate           //      |float|float| int |float|float| int |
+int vals[3] = {0, 1, 2};  //   ---+-----+-----+-----+-----+-----+-----+---
+Canvas c[2] = { Canvas(1024), Canvas(512) };
+```
+
+* **When authoring a class data is key**
+  - Methods are useful only when using a class
+* Decide what you need and keep it minimal
 
 ---
 
