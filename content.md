@@ -108,7 +108,7 @@ Ask your compiler: `sizeof(int)`; _never assume_ 🤔
 
 ---
 
-## 1. Built-in **Data Types**
+## 1. **Built-in** Data Types
 
 .pull-left[
 ### Integral Types.red[¹]
@@ -179,7 +179,7 @@ e.g. array access out of bounds, accessing a zombie object, null pointer derefer
 
 std::optional<uintmax_t> ipow2(unsigned pow) {
   // Future-proof by not limiting to uint64_t.
-  // Constant-time constant queried from compiler; thanks to static typing
+  // Obtain size from compiler at compile-time; thanks to static typing
   if (pow >= std::numeric_limits<uintmax_t>::digits)
     return {};
 
@@ -219,15 +219,15 @@ class: center, middle, inverse
 ## 2. Free-standing **Function**s
 
 ``` c++
-// Simple, complete program: no classes, libraries or includes.
-int add(int x, int y) {
-  return x + y;
-}
-
-int main() {
-  int a = 1, b = -4;
-  return add(a, b);
-}
+// Simple, complete program: no classes, libraries or includes.      +-------------+
+int add(int x, int y) {            //     +-------------+            |    free     |
+  return x + y;                    //     |    free     |            |             |
+}                                  //  S  |             | ←add()    +-------------+
+                                   //  T  |             |            | int, int    |
+int main(int argc, char** argv) {  //  A  +-------------+   add()→  +-------------+
+  int a = 1, b = -4;               //  C  | int, char** |            | int, char** |
+  return add(a, b);                //  K  | int, int    | ← main → | int, int    |
+}                                  //     +-------------+            +-------------+
 ```
 
 - **Compile-time**: types, qualifiers, functions, structs, classes, templates, etc. exist.
@@ -247,18 +247,23 @@ int main() {
 ## 3. Types, Variables and **Objects**
 
 .pull-left[
-* C++’s static type system expects all types, variables known at compile-time
-
-* Type = _(Size, Operations)_<br />
-.little[e.g. `int` loads `sizeof(int)` bytes to an integer register;<br />allows binary and arithmetic operations.]
+* C++’s static type system
+.little[
+- Expects all types, variables known at compile-time
+- Key to compile-time error detection and performance]
+* Type = _(Size, Operations)_.little[- e.g. `int` loads `sizeof(int)` bytes to an integer register; allows binary and arithmetic operations.]
 * **Object = _(Type, Memory) → Value_**
-  - Allocation + Initialization
-  - Value interpretation based on type
+.little[
+- Allocation + Initialization
+- Value interpretation based on type]
+* Other languages hide locations
+.little[
+- But every variable is a pointer! e.g. CPython internally uses `PyObject*` for _every_ variable]
 ]
 
 .pull-right[
 * Most languages treat variable as stickers; labels stuck on objects
-.little[- Types are associated with objects
+.little[- Types associated with objects (at runtime too)
 - Variables = handle to be (re)stuck on an object]
 
 ```python
@@ -281,7 +286,7 @@ float a = 0.5;  // redefinition error
 ```c
 char c = 0xde;      // value: 0xde (c), loc = 1000 (&c), type: char (gone at runtime)
 int a = 3203338898;                     // allocate sizeof(int) bytes, initilize to 1
-short *b = reinterpret_cast<short*>(&a);            // 4754 (on a big-endian machine)
+short *b = reinterpret_cast<short*>(&a);     // *b = 0x1292 (on a big-endian machine)
 char *p = &c;                        ╭━━━━━━━━━━━━━━━━━━┈┈┈┈┈
                                      ▼
  …   1000   1001   1002   …    ╭━ short ━╮╭━━━━ char* ━━━━╮
