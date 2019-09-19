@@ -26,8 +26,11 @@
          .remark-slide-content h1 { font-size: 3em; }
          .remark-slide-content h2 { font-size: 2em; }
          .remark-slide-content h3 { font-size: 1.6em; }
+
+         .footnote:first-child {
+             margin-top: 7mm;
+         }
          .footnote {
-             bottom: 3em;
              font-size: 0.3cm;
              display: block;
          }
@@ -162,10 +165,21 @@
              border-left:1.5rem solid rgba(68,138,255,.4);
              background-color:rgba(68,138,255,.15);
          }
+         ::selection {
+             background: #FFF200;
+             color: #000;
+             display: block;
+         }
+
+         ::-moz-selection {
+             background: #FFF200;
+             color: #000;
+             display: block;
+         }
         </style>
     </head>
     <body>
-        <script src="remark.js" type="text/javascript">
+        <script src="remark.min.js" type="text/javascript">
         </script>
         <script type="text/javascript">
          var slideshow = remark.create({
