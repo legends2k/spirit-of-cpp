@@ -18,6 +18,7 @@ It’s easy to get lost in the details; don’t.
 **Look for intuitions and at the big picture.**
 
 ---
+
 .left-column[
   ## Why Use C++?
   #### Why not Python, JavaScript, …?
@@ -94,6 +95,7 @@ name: ipow2-1
 # Let’s write an `ipow2()`
 
 ---
+
 template: ipow2-1
 name: ipow2-2
 
@@ -216,19 +218,19 @@ class: center, middle, inverse
 
 # What about **2⁸⁰** ?
 
-
 ---
+
 name: func-1
 
 ## 2. Free-standing **Function**s
 
-* Languages compiling to byte code, keep type information.red[1] at run-time too<br />
-.little[VM needs them for _reflection_, _garbage collection_, _JIT optimizations_, …]
-* C++ strips them and spits plain assembly<br />
-.little[[Data and code vanish into zeros and ones](https://godbolt.org/z/YZCG8u).  _Raw binary_, just as advertised 👍]
+- **Compile-time**: types, qualifiers, functions, structs, classes, templates, … exist.
+- **Run-time**: Oodles of [binary](https://godbolt.org/z/vrRUe9) your machine loves to gobble!
 
 ---
+
 template: func-1
+name: func-2
 
 ``` c++
 // Simple, complete program: no classes, libraries or includes.      +-------------+
@@ -242,8 +244,14 @@ int main(int argc, char** argv) {  //  A  +-------------+  add() --> +----------
 }                                  //     +-------------+            +-------------+
 ```
 
-- **Compile-time**: types, qualifiers, functions, structs, classes, templates, … exist.
-- **Run-time**: Oodles of binary code your machine loves to gobble!
+---
+
+template: func-2
+
+* Languages compiling to byte code, keep type information.red[1] at run-time too<br />
+.little[VM needs them for _reflection_, _garbage collection_, _JIT optimizations_, …]
+* C++ strips them and spits [object code](https://en.wikipedia.org/wiki/Object_code)<br />
+.little[Data and code vanish into zeros and ones.  _Raw binary_, just as advertised 👍]
 
 > C++ data types **inherit nothing** — both in-built and custom.  No compiler-supplied base `Object` under the hood.
 
@@ -254,7 +262,7 @@ int main(int argc, char** argv) {  //  A  +-------------+  add() --> +----------
 ## 3. Types, Variables and **Objects**
 
 .pull-left[
-* C++’s static type system
+* Static type system
 .little[
 - Expects all types, variables known at compile-time
 - Key to compile-time error detection and performance]
@@ -265,7 +273,7 @@ int main(int argc, char** argv) {  //  A  +-------------+  add() --> +----------
 - Value interpretation based on type]
 * Other languages hide locations
 .little[
-- But every variable is a pointer! e.g. CPython internally uses [`PyObject*` for _every_ variable](https://stackoverflow.com/a/57380719/183120)]
+- But **every variable is a pointer**! e.g. Python.red[1] internally uses [`PyObject*` for _every_ variable](https://stackoverflow.com/a/57380719/183120)]
 ]
 
 .pull-right[
@@ -293,16 +301,18 @@ float a = 0.5;  // redefinition error
 ```c
 char c = 0xde;      // value: 0xde (c), loc = 1000 (&c), type: char (gone at runtime)
 int a = 3203338898;                     // allocate sizeof(int) bytes, initilize to 1
-short *b = reinterpret_cast<short*>(&a);     // *b = 0x1292 (on a big-endian machine)
-char *p = &c;                          ,-------------------------------------
-                                      ↓
- …   1000   1001   1002   …     /-- short --\ /--------- char* ---------\
+short *b = reinterpret_cast<short*>(&a);     // *b = 0xfeed (on a big-endian machine)
+char *p = &c;            ,--------------------------------------------------
+                        ↓
+ …   1000   1001  /-- short --\               /--------- char* ---------\
 ----------------------------------------------------------------------------
-.. | 0xde | 0xad | 0xbe | 0xef | 0x12 | 0x92 | 0x00 | 0x00 | 0x10 | 0x00 | ..
+.. | 0xde | 0xad | 0xfe | 0xed | 0x12 | 0x92 | 0x00 | 0x00 | 0x10 | 0x00 | ..
 ----------------------------------------------------------------------------
       ↑          \----------- int ----------/                 |
        `------------------------------------------------------'
 ```
+
+.footnote[.red[¹]: [CPython](https://en.wikipedia.org/wiki/CPython) – the most common Python implementation]
 
 ---
 
@@ -338,7 +348,7 @@ char *p = &c;                          ,-------------------------------------
 - Never even write `new`, `malloc`, `CoTaskMemAlloc`, …
 - Know: `delete ≠ delete []`, `delete ≠ free()`, …
 ]
-- **Slow**: de/alloc involves OS call
+- **Slow**: de/alloc involves OS intervention
 .little[
 - Virtual memory, book keeping, fragmentation
 - _Pointer chasing_ isn’t cache-friendly
@@ -361,6 +371,44 @@ loadCount(&c);       getCount(c);            getCount(c.get());
 ???
 - Stack size is OS-dependant too: 8 MiB on macOS
 - Know: `delete` between runtimes are unequal!
+
+---
+
+## Objects in Stack and Heap
+
+``` c++
+struct Passport {                           struct SmartPassport {
+  char* id;                                   string id;
+  int expiry;                                 int expiry;
+}                                           }
+
+struct User {                               struct SmartUser {
+  int dob;                                    int dob;
+  char* name;                                 string name;
+  Passport* pass;                             unique_ptr<SmartPassport> pass;
+};                                          };
+
+int main() {                                SmartUser u1;
+  User *u2 = new User();
+  u2->name = new char[10]();
+  u2->pass = new Passport();
+  u2->pass->id = new char[10]();                    HEAP
+                                        ---------------------------
+  delete [] u2->pass->id;        ------/      .-----------------.  \------
+  delete u2->pass;           ---/          .->| | | | | | | | | |         \---
+  delete [] u2->name;     --/              |  '-----------------'             \--
+  delete u2;            -/   .-----------. |                                     \-
+}                      /  .->| int       | |                  .-----------------.  \
+   +-------------+    /   |  |-----------| |               .->| | | | | | | | | |   \
+   |             |    |   |  | char*     |-'               |  '-----------------'   |
+ S |-------------|  .-----'  |-----------|                 |                        /
+ T | User*       |--'  \     | Passport* |-    .-------.   |                       /
+ A |-------------|      -\   '-----------' `-->| char* |---'                     /-
+ C | int | SP*   |        --\                  |-------|                      /--
+ K |-------------|           ---\              | int   |                  /---
+   | int | char* |               ------\       '-------'           /------
+   +-------------+                      ---------------------------
+```
 
 ---
 
