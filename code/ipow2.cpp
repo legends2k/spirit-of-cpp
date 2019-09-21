@@ -4,14 +4,14 @@
 #include <iostream>
 
 std::optional<uintmax_t> ipow2(unsigned pow) {
-  // Future-proof by not limiting to uint64_t.
-  // Constant-time constant queried from compiler; thanks to static typing
+  // Future-proof by not using uint64_t and limiting to 64-bit architectures.
+  // Obtain size from compiler at compile-time; thanks to static typing
   if (pow >= std::numeric_limits<uintmax_t>::digits)
     return {};
-
-  uintmax_t value = 1;
-  value <<= pow;
-  return value;
+                           //                 2⁸  2⁷  2⁶  2⁵  2⁴  2³  2²  2¹
+  uintmax_t value = 1;     // ----------------------------------------------+
+  value <<= pow;           // … | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+  return value;            // ----------------------------------------------+
 }
 
 int main(int argc, char** argv) {
@@ -22,7 +22,5 @@ int main(int argc, char** argv) {
       std::cout << *result << '\n';
     else
       std::cout << "Power beyond machine limits!\n";
-  } else {
-    std::cerr << "Usage: ipow2 POWER";
   }
 }

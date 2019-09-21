@@ -8,7 +8,7 @@ class: center, middle, inverse
 
 class: center, middle, inverse
 
-## Within C++, there is a much **smaller** and **cleaner** language struggling to get out.
+## .left[Within C++, there is a much **smaller** and **cleaner** language struggling to get out.]
 ### .right[— Bjarne Stroustrup, creator of C++]
 
 <br /><br />
@@ -47,9 +47,9 @@ print(2 ** 80) # 2⁸⁰
 How C++ fares against Python here?
 
 ``` c++
-int      x1 = pow(2, 63); // GCC: overflow
-unsigned x2 = pow(2, 63); // GCC: overflow
-uint64_t x3 = 1   << 63;  // GCC: shift count >= type width
+int      x1 = pow(2, 63); // Warning: overflow (GCC)
+unsigned x2 = pow(2, 63); // Warning: overflow (GCC)
+uint64_t x3 = 1   << 63;  // Warning: shift count ≥ width
 *uint64_t x4 = 1ul << 63;  // finally!
 //  2⁸⁰?  Hmmm... all in good time!
 ```
@@ -85,7 +85,7 @@ So many retries! Aargh!! 🤦
 
 # **Intuitiveness**: Epic fail!
 
-Output varies for same program between compilers!?! Oh mama! 😲
+Output varies between compilers for same program?! Oh mama! 😲
 
 ---
 class: center, inverse
@@ -130,7 +130,7 @@ Ask your compiler: `sizeof(int)`; _never assume_ 🤔
 * `long double` .little[(usually 80, 96 or 128 bits)]
 
 .little[
-_Assuming anything more than below rule is [risky](https://godbolt.org/z/UW0rCc)_!]
+Only the _below rule about integers is well-defined_; assuming more is [risky](https://godbolt.org/z/UW0rCc)!]
 ]
 
 **`sizeof(char) ≤ sizeof(short) ≤ sizeof(int) ≤ sizeof(long) ≤ sizeof(long long)`**<br />
@@ -154,14 +154,14 @@ _Assuming anything more than below rule is [risky](https://godbolt.org/z/UW0rCc)
 
 * **The ISO C++ standard guards C++ programmers with certain guarantees** <br />.little[A contract between language users and compiler writers ] 🤝
 
-* **Programs adhering to the standard are always portable and work** <br />
+* **Programs adhering to the standard always work and remain portable** <br />
 .little[e.g. Compile a 20-year old program `g++ -std=c++98 old.cpp` _even today on any platform_ with a compiler; it works] <br />
 
 * Standard precisely defines many aspects of a program: **well-defined** ← this is 🏠
 * Standard loosely defines some aspects .little[(_Implementation-defined_,  _Unspecified_ and [_Undefined behaviour_](https://stackoverflow.com/q/2397984/183120))] ☠
 .little[
-- for exotic architectures having C++ compilers <br /> .little[e.g. [Unisys Servers with 9-bit bytes and 36-bit ints](https://stackoverflow.com/a/6972551/183120) programmable in C and C++ (not Python or JS — _sorry!_)]
-- for freedom to compiler-authors .little[different compilers, varying implementations: a healthy competition]
+- for many exotic architectures having C++ compilers <br /> .little[e.g. [Unisys Servers with 9-bit bytes and 36-bit ints](https://stackoverflow.com/a/6972551/183120) programmable in C and C++ (not Python or JS — _sorry!_)]
+- for freedom to compiler-authors — different compilers, varying implementations: a healthy competition
 ]
 
 > _But it works on my machine!?_
@@ -181,14 +181,14 @@ e.g. array access out of bounds, accessing a zombie object, null pointer derefer
 #include <iostream>
 
 std::optional<uintmax_t> ipow2(unsigned pow) {
-  // Future-proof by not limiting to uint64_t.
+  // Future-proof by not using uint64_t and limiting to 64-bit architectures.
   // Obtain size from compiler at compile-time; thanks to static typing
   if (pow >= std::numeric_limits<uintmax_t>::digits)
     return {};
-
-  uintmax_t value = 1;
-  value <<= pow;
-  return value;
+                           //                 2⁸  2⁷  2⁶  2⁵  2⁴  2³  2²  2¹
+  uintmax_t value = 1;     // ----------------------------------------------+
+  value <<= pow;           // … | 0 | 0 | 0 | 1 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+  return value;            // ----------------------------------------------+
 }
 
 int main(int argc, char** argv) {
@@ -203,7 +203,7 @@ int main(int argc, char** argv) {
 }
 ```
 
-* **Use [fixed-width integers](https://devdocs.io/c/types/integer)**:  `uint8_t`, `int_fast16_t`, `int32_t`, `uintptr_t`, …
+* **Use [fixed-width integers](https://en.cppreference.com/w/cpp/types/integer)**:  `uint8_t`, `int_fast16_t`, `int32_t`, `uintptr_t`, …
 .little[- `unsigned`: beware of wrap around behaviour; decrement with extreme care e.g. `uint8_t x = 0; --x; // x is now 255`]
 * Use `short`, `int`, `long`, etc. when you’re _sure_ minimum (guaranteed) width is enough <br />
   .little[- Chromium has `int`s but use only a few compilers (all having 32-bit `int`) and [target only `i686`, `x86_64` and `ARM32` builds](https://www.chromium.org/chromium-os/how-tos-and-troubleshooting/chromiumos-architecture-porting-guide) ]
@@ -218,8 +218,17 @@ class: center, middle, inverse
 
 
 ---
+name: func-1
 
 ## 2. Free-standing **Function**s
+
+* Languages compiling to byte code, keep type information.red[1] at run-time too<br />
+.little[VM needs them for _reflection_, _garbage collection_, _JIT optimizations_, …]
+* C++ strips them and spits plain assembly<br />
+.little[[Data and code vanish into zeros and ones](https://godbolt.org/z/YZCG8u).  _Raw binary_, just as advertised 👍]
+
+---
+template: func-1
 
 ``` c++
 // Simple, complete program: no classes, libraries or includes.      +-------------+
@@ -233,15 +242,10 @@ int main(int argc, char** argv) {  //  A  +-------------+  add() --> +----------
 }                                  //     +-------------+            +-------------+
 ```
 
-- **Compile-time**: types, qualifiers, functions, structs, classes, templates, etc. exist.
+- **Compile-time**: types, qualifiers, functions, structs, classes, templates, … exist.
 - **Run-time**: Oodles of binary code your machine loves to gobble!
 
 > C++ data types **inherit nothing** — both in-built and custom.  No compiler-supplied base `Object` under the hood.
-
-* Languages compiling to byte code, keep type information.red[1] at run-time too.<br />
-.little[VM needs them for _reflection_, _garbage collection_, _JIT optimizations_, …]
-* C++ strips them and spits plain assembly. <br />
-.little[[Data and code vanish into zeros and ones](https://godbolt.org/z/YZCG8u).  _Raw binary_, just as advertised 👍]
 
 .footnote[.red[¹]: Commonly called _boxed datatypes_ e.g. `Integer` inheriting `Java.lang.Object` wraps the actual integer. C++’s `int` is machine integer.]
 
@@ -316,8 +320,8 @@ char *p = &c;                          ,-------------------------------------
 ]
 - Limited scope
 .little[
-- Alive within current and deeper functions
-- Can’t return local variable _address_
+- Alive within current and called functions
+- Can’t `return` local variable _address_ but can pass up
 ]
 - Limited size (configurable)
 .little[
@@ -348,7 +352,7 @@ char *p = &c;                          ,-------------------------------------
 
 ``` c++
 void loadCount(int* count);
-// GOOD              // BAD                  // UGLY
+// THE GOOD          // THE BAD              // THE UGLY
 int c = 0;           int* c = new int;       unique_ptr<int> c = make_unique<int>();
 loadCount(&c);       getCount(c);            getCount(c.get());
                      delete c;
