@@ -140,7 +140,7 @@ Only the _below rule about integers is well-defined_; assuming more is [risky](h
 .left[### Other Types]
 - `void`
 - `bool`
-- Pointer types e.g. `int*`, `unsigned char**`, `bool*`<br />
+- Pointer types e.g. `int*`, `unsigned char**`, `void (*)(float)`<br />
 .little[Arithmetic based on pointed-to type e.g. `int *p; ++p;` moves `p` by `sizeof(int)`]
 - Array types e.g. `int[2], char[6][5]`
 
@@ -259,7 +259,7 @@ template: func-2
 
 ---
 
-## 3. Types, Variables and **Objects**
+## 3. **Objects in Memory**
 
 .pull-left[
 * Static type system
@@ -267,7 +267,7 @@ template: func-2
 - Expects all types, variables known at compile-time
 - Key to compile-time error detection and performance]
 * Type = _(Size, Operations)_.little[- e.g. `int` loads `sizeof(int)` bytes to an integer register; allows binary and arithmetic operations.]
-* **Object = _(Type, Memory) → Value_**
+* Object = _(Type, Memory) → Value_
 .little[
 - Allocation + Initialization
 - Value interpretation based on type]
@@ -286,7 +286,7 @@ template: func-2
 > i = "hi"  # no error on reseat
 ```
 
-* Variable = _(Type, Location, Value)_<br />
+* **Variable = _(Type, Location, Value)**_<br />
 .little[  - Born, live, die with same type and location]
 
 ```c++
@@ -295,7 +295,7 @@ float a = 0.5;  // redefinition error
 ```
 ]
 
-### **Memory model**
+### Memory model
 <!-- Great ASCII art reference -->
 <!-- http://xahlee.info/comp/unicode_ascii_art.html -->
 ```c
@@ -316,7 +316,7 @@ char *p = &c;            ,--------------------------------------------------
 
 ---
 
-## 4. **Memory**
+## 4. **Memory**: Types
 
 .pull-left[
 ### Stack
@@ -374,21 +374,21 @@ loadCount(&c);       getCount(c);            getCount(c.get());
 
 ---
 
-## Objects in Stack and Heap
+## 4.1 Memory: **Objects across Stack and Heap**
 
 ``` c++
-struct Passport {                           struct SmartPassport {
-  char* id;                                   string id;
-  int expiry;                                 int expiry;
-}                                           }
+struct Passport {                       struct SmartPassport {
+  char* id;                               string id;
+  int expiry;                             int expiry;
+}                                       }
 
-struct User {                               struct SmartUser {
-  int dob;                                    int dob;
-  char* name;                                 string name;
-  Passport* pass;                             unique_ptr<SmartPassport> pass;
-};                                          };
+struct User {                           struct SmartUser {
+  int dob;                                int dob;
+  char* name;                             string name;
+  Passport* pass;                         unique_ptr<SmartPassport> pass;
+};                                      };
 
-int main() {                                SmartUser u1;
+int main() {                            SmartUser u1 = {0, {}, new SmartPassport()};
   User *u2 = new User();
   u2->name = new char[10]();
   u2->pass = new Passport();
@@ -397,17 +397,91 @@ int main() {                                SmartUser u1;
   delete [] u2->pass->id;        ------/      .-----------------.  \------
   delete u2->pass;           ---/          .->| | | | | | | | | |         \---
   delete [] u2->name;     --/              |  '-----------------'             \--
-  delete u2;            -/   .-----------. |                                     \-
-}                      /  .->| int       | |                  .-----------------.  \
-   +-------------+    /   |  |-----------| |               .->| | | | | | | | | |   \
-   |             |    |   |  | char*     |-'               |  '-----------------'   |
- S |-------------|  .-----'  |-----------|                 |                        /
- T | User*       |--'  \     | Passport* |-    .-------.   |                       /
- A |-------------|      -\   '-----------' `-->| char* |---'                     /-
- C | int | SP*   |        --\                  |-------|                      /--
- K |-------------|           ---\              | int   |                  /---
-   | int | char* |               ------\       '-------'           /------
+  delete u2;            -/   .-----------. |    .-------.                        \-
+}                      /  .->| int       | | .->| char* |-    .-----------------.  \
+   +-------------+    /   |  |-----------| | |  |-------| `-->| | | | | | | | | |   \
+   |             |    |   |  | char*     |-' |  | int   |     '-----------------'   |
+ S |-------------|  .-\---'  |-----------|   |  '-------'                           /
+ T | User*       |--'  \     | Passport* |---'    .-----------.                    /
+ A |-------------|      -\   '-----------'    .-->| char*     |                  /-
+ C | int | SP*   |--,     --\                 |   |-----------|               /--
+ K |-------------|  '-----------\-------------'   | int | int |           /---
+   | int | char* |               ------\          '-----------'    /------
    +-------------+                      ---------------------------
+```
+
+---
+
+## 4.2 Memory: **Shallow Copy**, **Deep Copy** and **Move**
+
+``` c++
+//- SHALLOW COPY: copy values as-is -------------------------------------------------
+//                                                        owner     clone
+  int owner = 12;  // owner has data originally          +----+    +----+
+  int clone = 0;   // need to make a copy                | 12 |    | 12 |
+  clone = owner;   // copy value as-is                   +----+    +----+
+
+//-SHALLOW COPY of pointer (almost always wrong) ------------------------------------
+//                                                   owner       data      clone
+  int* owner = new int(12); // owner is a pointer  +-------+   .-----.   +-------+
+  int* clone = owner;       // clone copies it!!   | 0x100 |-->| 12  |<--| 0x100 |
+// Inconsistent ownership!!                        +-------+   '-----'   +-------+
+// Responsibility unclear: who'll free data?                    0x100
+
+//-DEEP COPY: both gets to keep their own copy---------------------------------------
+//                                                    owner            clone
+  int* owner = new int; *owner = 12; //              +-----+  .----.  +-----+  .----.
+  int* clone = new int; // allocate memory           |0x100|->| 12 |  |0x200|->| 12 |
+  *clone = *owner;      // copy data, not address    +-----+  '----'  +-----+  '----'
+//                                                            0x100            0x200
+
+//--MOVE: steal data from the owner--------------------------------------------------
+  int* owner = new int(12); //              owner         data         thief
+  int* thief = nullptr;     //            +-------+     .------.     +-------+
+  std::swap(owner, thief);  //            | 0x100 |---->|  12  |     |  0x0  |---->X
+// super cheap                            +-------+     '------'     +-------+
+//   - just an interger swap                              0x100
+//   - no memory allocation
+//                                          owner         data         thief
+//                                        +-------+     .------.     +-------+
+//                                  X<----|  0x0  |     |  12  |<----| 0x100 |
+//                                        +-------+     '------'     +-------+
+```
+
+---
+
+## 4.3 Memory: **Object Copy and Move**
+
+``` c++
+struct Machine {                               struct Image {
+  int max_memory;                                int w = 0, h = 0;
+  float dimensions;                              uint32_t* pixels = nullptr; // rgba
+};
+int main() {                                     int size() const { return w * h; }
+  // shallow / trivial copy
+  Machine m1 = { 1, 1.2f }, m2;                 Image(int width, int height)
+  m2.max_memory = m1.max_memory;                  : w(width), h(height) { }
+  m2.dimensions = m2.dimensions;
+                                                ~Image() { if (pixels)
+                                                              delete [] pixels; }
+                                               };
+  // make an image, allocate pixel data
+  Image owner(4, 4);
+  owner.pixel = new uint32_t[ownersize()];
+
+  Image clone(owner.w, owner.h);
+  clone.pixels = owner.pixels; // BAD! clone.~Image will try delete on dangling ptr
+
+  // deep copy - byte by byte copy: each image gets its own copy of pixels
+  clone.pixels = new uint32_t[owner.size()];
+  std::copy_n(owner.pixels, owner.size(), clone.pixels);
+
+  // move: no allocation, no deep copy
+  Image thief;
+  thief.w = owner.w; thief.h = owner.h;
+  std::swap(thief.pixels, owner.pixels);
+  owner.w = owner.h = 0;                  // be a responsible thief ;)
+};                                        // leave owner in a decent state
 ```
 
 ---
@@ -423,22 +497,36 @@ enum : uint8_t Weekends { Sat, Sun };
 // 2. Composite
 struct Point { float x; float y; };
 class Canvas {                      //  Canvas
-  Point origin;                     //  +-------+-------+-------+
-  int max_memory;                   //  | float | float |  int  |
-  void* data;                       //  +-------+-------+-------+
-
+  Point origin = {};                //  +-------+-------+-------+
+  int max_memory = 64;              //  | float | float |  int  |
+                                    //  +-------+-------+-------+
 public:
   Canvas(float max);
-};                        //       /<--- c[0]  --->\ /<---- c[1] --->\
-                          //   ---+-----+-----+-----+-----+-----+-----+---
-// 3. Aggregate           //      |float|float| int |float|float| int |
-int vals[3] = {0, 1, 2};  //   ---+-----+-----+-----+-----+-----+-----+---
+};
+                                    //       /<--- c[0]  --->\ /<---- c[1] --->\
+                                    //   ---+-----+-----+-----+-----+-----+-----+---
+// 3. Aggregate                     //      |float|float| int |float|float| int |
+int vals[3] = {0, 1, 2};            //   ---+-----+-----+-----+-----+-----+-----+---
 Canvas c[2] = { Canvas(1024), Canvas(512) };
 ```
 
-* **When authoring a class data is key**
-  - Methods are useful only when using a class
-* Decide what you need and keep it minimal
+.pull-left[
+* When **authoring** a class think **data** first
+* Need resource management?
+  - Use smart objects or use wrappers
+  - No? Your class is a [trivial POD](http://en.cppreference.com/w/cpp/types/is_trivial)
+* In C++, [inheritance is for interface compliance, NOT code reuse](https://isocpp.org/wiki/faq/objective-c#objective-c-and-inherit)
+]
+
+.pull-right[
+* When **using** a class **methods** are key
+* [Accessors (`const`) and mutators](https://stackoverflow.com/q/9627093)
+* Operators allowed?
+* **Well-written classes have interfaces that’re easy to use and hard to misuse**
+]
+
+---
+
 
 ---
 
