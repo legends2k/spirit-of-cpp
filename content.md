@@ -117,7 +117,7 @@ Ask your compiler: `sizeof(int)`; _never assume_ 🤔
 .pull-left[
 ### Integral Types.red[¹]
 
-* `char` .little[(≥ 8-bits == 1 byte)].red[2]
+* `char` .little[(≥ 8-bits = 1 byte)].red[2]
 * `short` .little[(≥ 16-bits)]
 * `int` .little[(≥ 16-bits)]
 * `long` .little[(≥ 32-bits)]
@@ -512,21 +512,128 @@ Canvas c[2] = { Canvas(1024), Canvas(512) };
 
 .pull-left[
 * When **authoring** a class think **data** first
-* Need resource management?
-  - Use smart objects or use wrappers
-  - No? Your class is a [trivial POD](http://en.cppreference.com/w/cpp/types/is_trivial)
-* In C++, [inheritance is for interface compliance, NOT code reuse](https://isocpp.org/wiki/faq/objective-c#objective-c-and-inherit)
+.little[- Methods are vital to class usage; think user and design]
+* In C++, [inheritance isn’t for code reuse](https://isocpp.org/wiki/faq/objective-c#objective-c-and-inherit)
+.little[- It is for interface compliance; prefer _composition_]
+* [Accessors (`const`) and mutators](https://stackoverflow.com/q/9627093)
+* Well-written classes are **easy to use and hard to misuse**
 ]
 
 .pull-right[
-* When **using** a class **methods** are key
-* [Accessors (`const`) and mutators](https://stackoverflow.com/q/9627093)
-* Operators allowed?
-* **Well-written classes have interfaces that’re easy to use and hard to misuse**
+* Managing resources? or [POD](http://en.cppreference.com/w/cpp/types/is_trivial)?
+  - Smart wrappers or scoped guards
+  - Keep compiler-supplied functions?
+  - Operators overloading? `operator=`?
+* Non-friend free functions > methods
+  .little[- Utilities shouldn’t be methods]
 ]
 
 ---
 
+## 5.1: **RAII**.red[¹]: `new` in `T()`, `delete` in `~T()`
+
+C++ doesn’t come with garbage collection because we’ve RAII!
+
+``` c++
+#include <cstddef>  // ← for std::byte; preferred over uint8_t
+
+struct FileReader {       // a crude smart wrapper
+
+  FileReader(std::string path) {
+    // accquire resources in the constructor
+    file_ = fopen(path.c_str(), 'r');
+    if (file_) {
+      data_ = new std::byte[100];
+      if (data_) fread(data_, sizeof(std::byte), 100, file_);
+    }
+  }
+
+  ~FileReader() {
+    // destruct resources in the destructor
+    if (file_)
+      fclose(file_);
+
+    if (data_)
+      delete [] data_;
+  }
+
+private:
+  std::byte* data_ = nullptr;
+  FILE* file_ = nullptr;
+};
+```
+
+.footnote[.red[¹]: RAII – _Resource Acquisition Is Initialization_ – is the cornerstone idiom of modern C++ but with the worst possible name 🤦]
+
+---
+
+## 5.2: **RAII** recursively
+
+Didn’t we say _NO `new` or `delete`_?  Let’s try again.
+
+``` c++
+struct FileReader {       // a smart wrapper with no low-level fiddling
+  File(std::string path) {
+    file_.reset(fopen(path.c_str(), 'r'));
+    if (file_) {
+      const auto file_size = getFileSize(file_.get()); // get() gives underlying T*
+      data_.resize(file_size);                         // auto resize vector's memory
+      fread(data_.data(), sizeof(std::byte), file_size, file_);
+    }
+  }
+
+  // ~FileReader() — Look ma, no destructor!
+  // Under the hood, when some `File f` gets destroyed, these are called (in order)
+  //     1. ~unique_ptr<FILE, FileCloser> calls fclose()
+  //     2. ~vector<std::byte>() auto deletes memory its ptr_ is pointing at
+  //     3. ~File() finally but since it's a no-op, it'd be optimized away
+private:
+  std::unique_ptr<FILE, FileCloser> file_;  // unique_ptr auto closes file
+  std::vector<std::byte> data_; // vector manages bytes, auto resizes array
+};
+// Functor is a function with states. This function takes a unique_ptr's T*.
+struct FileCloser {  // Callable this: FileCloser fc;  fc(file_ptr);
+  void operator()(FILE* f) {
+    if (f) fclose(f);
+  }
+};
+```
+Recursive since `FileReader` – a smart wrapper – is now embed-able in another higher abstraction 💡 When _that_ gets destroyed, `FileReader` will automatically release its resources.
+
+---
+
+## 5.3: **Constructor**: Initialize invariants
+
+* Auto-generated default constructor is a no-op; members would be garbage values
+* Write a constructor to initialize states / data members
+* Prefer in-class initializers; sometimes no constructors may be needed
+
+``` c++
+struct Point {
+  float x, y;    // garbage by default
+};
+
+struct Circle {
+
+  float radius = 1.0f;  // in-class initializer
+  Point centre;         // garbage if created using Circle()
+
+  Circle() = default;
+
+  Circle(float r) : radius(r), centre(0.0f, 0.0f) {  // member initializer list
+  }
+
+  static Circle* MakeCircle(float radius, Point centre) { /* return a circle */ }
+};
+```
+
+* Prefer member initializers over setting them in the body
+* Make constructors `explicit` to make sure objects aren’t created on the fly
+* Want to control creation?
+.little[
+- `delete` default constructor, don’t supply other constructors
+- Author a `static` class function that acts as a factory (_Named Constructor Idiom_)
+]
 
 ---
 
