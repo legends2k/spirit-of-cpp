@@ -146,7 +146,7 @@ Only the _below rule about integers is well-defined_; assuming more is [risky](h
 
 .footnote[.red[¹]: variants of `unsigned` and `signed` ([two’s complement](https://en.wikipedia.org/wiki/Two%27s_complement))]
 .footnote[.red[²]: A byte needn’t be 8 bits; it’s whatever `char`’s bit width is 😳]
-.footnote[.red[³]: Not guaranteed to be, but mostly, IEEE-754 floats]
+.footnote[.red[³]: Not guaranteed to be, but mostly, [IEEE-754](https://en.wikipedia.org/wiki/IEEE_754) float]
 
 ---
 
@@ -212,14 +212,6 @@ int main(int argc, char** argv) {
 
 ---
 
-class: center, middle, inverse
-
-### Yeah.. yeah!
-
-# What about **2⁸⁰** ?
-
----
-
 name: func-1
 
 ## 2. Free-standing **Function**s
@@ -232,6 +224,7 @@ name: func-1
 template: func-1
 name: func-2
 
+<!-- Refer code/basic.cpp -->
 ``` c++
 // Simple, complete program: no classes, libraries or includes.      +-------------+
 int add(int x, int y) {            //     +-------------+            |    free     |
@@ -253,9 +246,10 @@ template: func-2
 * C++ strips them and spits [object code](https://en.wikipedia.org/wiki/Object_code)<br />
 .little[Data and code vanish into zeros and ones.  _Raw binary_, just as advertised 👍]
 
-> C++ data types **inherit nothing** — both in-built and custom.  No compiler-supplied base `Object` under the hood.
+> .tag[Flexibility] C++ data types **inherit nothing**.red[2] — both in-built and custom.  No compiler-supplied base `Object` under the hood.
 
 .footnote[.red[¹]: Commonly called _boxed datatypes_ e.g. `Integer` inheriting `Java.lang.Object` wraps the actual integer. C++’s `int` is machine integer.]
+.footnote[.red[²]: You don’t pay for what you don’t use.]
 
 ---
 
@@ -313,6 +307,196 @@ char *p = &c;            ,--------------------------------------------------
 ```
 
 .footnote[.red[¹]: [CPython](https://en.wikipedia.org/wiki/CPython) – the most common Python implementation]
+
+---
+
+class: center, middle, inverse
+
+### Yeah.. yeah!
+
+# What about **2⁸⁰** ?
+
+---
+
+## Hardware Limits and Big Ints
+
+* Take an example architecture [X64](https://en.wikipedia.org/wiki/64-bit_computing)
+
+* Maximum representable `int` on X64 `0xffff'ffff'ffff'ffff = 18446744073709551615`
+
+* Values, instructions, addresses cannot exceed as CPU cannot understand a larger _integer_
+
+* How then to represent larger integers?  _Bit Integers_ a.k.a _Big Numbers_
+
+* Make an array of 64-bit integers each representing a part of the constituting big integer
+
+* e.g. for `1 << 80`, you’d need 3 integers; result, if shifted again by `20`, prefix one more, …
+
+``` c++
+//  bits                     127  96 95   64 63   32 31    0
+            +-----------------------------------------------+
+            | . . . |  int  |  int  |  int  |  int  |  int  |  // a big int in memory
+            +-----------------------------------------------+
+// elements             4       3       2       1       0
+```
+
+* **Fun Exercise**: Try implementing a big integer class using a `std::vector<uint8_t>`
+  - Implement arithmetic and shift operators
+  - Needs overflow/underflow detection and bit manipulation
+
+---
+
+## 2⁸⁰ in C++ (and Python)
+
+* .tag[Hardware] Manufacturers make _dedicated_ hardware for certain algorithms
+* .tag[Performance] **Using dedicated hardware is _a lot_ faster**
+.little[
+- E.g. [GPU](http://en.wikipedia.org/wiki/GPU)s for 3D data and pixels, hardware decoders for MP3, etc.
+- SIMD instruction sets to perform multiple operations in one CPU cycle.
+]
+* .tag[Flexibility] Software emulation provided as a fallback when dedicated hardware absent
+.little[
+- e.g. Graphics using CPU when dedicated GPU is missing
+]
+* Python’s `int` has _arbitrary-precision_ because internally [**all** integers are big ints](https://rushter.com/blog/python-integer-implementation/)
+
+  - Programmer is never exposed system’s native integer (64-bits)
+  - Software emulation, not for specific algorithms but, for a basic functionality
+  - Every programmer penalized for flexibility so that expressions like `2 ** 80` work
+* C++ only provides `int`, and no more, since your machine only has that!
+
+  - .tag[Flexibility] Only a module needing `BigInt` can include a library or write one
+.little[- e.g. [GNU Multiple Precision](https://gmplib.org/) library is one of the fastest]
+  - .tag[Hardware] Exposes dedicated hardware by providing direct access
+.little[- Using [SSE2](https://en.wikipedia.org/wiki/SSE2) is just a header away: [live example](https://godbolt.org/z/OuwQE1) of a 4-vector addition using 1 assembly instruction]
+
+> **You only pay for what you use**. — Language Design Principle
+
+---
+
+## **Critical** vs **Non-Critical** Software
+
+* **Turn-around vs throughput**: different settings, different expectations
+    - Example: Ordering food at a restaurant vs ordering for home delivery 🍜<br />
+        - Wasting time on _avoidable_, petty procedures means an overall delay in eating
+        - Stopping 5 mins for a smoke is OK when it’d be 30 mins restaurant ➜ home
+* Time-wise non-critical software examples
+  - Server-side code looking up voluminous database — .little[**Overarching bottleneck**: disk access, network]
+  - Content generators e.g. Doxygen — .little[**Output quality matters but not time-taken**]
+
+* **Non-critical software**: When **bottleneck is elsewhere**, optimizing every instruction or data is **pessimization**
+
+> Shaving off a few (unnoticeable) microseconds when overall lag would be in seconds is _**pessimisation**._
+
+* **Critical software**: No such luxury; picoseconds and bytes matter
+  - Very small lags every operation leads to a sluggish system
+  - You can’t put a finger on it but system feels slow
+
+---
+
+class: left, inverse
+name: knuth-1
+
+## .center[**Use the Right Tool for the Right Job**]
+
+---
+
+template: knuth-1
+name: knuth-2
+
+<br />
+
+.little[### We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil.]
+
+---
+
+template: knuth-2
+name: knuth-3
+
+.little[##Yet **we should not pass up our opportunities in that critical 3%**.
+### .right[— Donald Knuth / Tony Hoare]]
+
+---
+
+template: knuth-3
+
+#### C++ is keen about _that_ 3% — as a language community.
+
+We mean to _eek out the very last drop of juice a CPU’s got!_
+
+???
+
+We’ll discuss sane defaults when writing C++ software — just good habits, not pessimizations.
+
+---
+
+## Languages for **non-critical** software <small>(C#, Python, JS, …)</small>
+
+* .tag[Performance] Most run on a VM.red[1] with garbage collection.
+
+* .tag[Flexibility] Sacrifices finer control for more features.<br />
+.little[e.g. reflection, garbage collection, rich built-in types like _lists, dictionaries/maps, big integers_, … ]
+
+* .tag[Hardware] Abstracts machine away as much as possible.<br />
+.little[Assumes programmers doesn’t know hardware; relieves programmer from worrying about hardware intricacies]
+
+## Languages for **critical** software <small>(C++, C, Rust, …)</small>
+
+* .tag[Performance] _Zero-overhead abstractions_.red[2]; as close to hardware as possible but not closer.<br />
+.little[Easy to reason about the machine code generated for your program.]
+
+* .tag[Flexibility] You choose what you want. _You only pay for what you use_.red[3].<br />
+.little[Programmer, not the language, is in charge. Believes programmer knows what s/he doing.]
+
+* .tag[Hardware] _Low-level access_ enables authoring kernel, virtual machines, …<br />
+.little[Direct access to CPU/GPU/OS facilities, _yum_!  No VM, no GC  _no middleman — no comission_.]
+
+<div>
+.footnote[.red[¹]: Not system virtual machine (like VMWare, Qemu, VirtualBox, …), but **[process virutal machine](https://en.wikipedia.org/wiki/Virtual_machine#Process_virtual_machines)** (like JVM, CLR, Python interpreter, …)]
+
+.footnote[.red[²]: `std::vector` or `std::map` should perform _almost_ like a vector or red-black tree hand-coded in assembly]
+
+.footnote[.red[³]: A key design guideline of the C++ standards committee; another is _portability_.]
+</div>
+
+---
+
+# Browser is **system software**
+
+It’s complex and critical; comparable to a
+
+.pull-left[
+* Kernel
+
+* Game engine
+
+* Compiler / virtual machine
+
+* Real-time financial trading system
+]
+
+.pull-right[
+> Wasting a small time delta every operation = **systemic lag** hurting productivity.
+]
+
+Ever wondered what language virtual machines are written in?
+
+* [C#](https://stackoverflow.com/q/1324919/183120)
+* [Java](https://stackoverflow.com/a/10028154/183120)
+* [Python](https://en.wikipedia.org/wiki/CPython)
+* JavaScript
+  - Mozilla’s [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
+  - Google’s [V8](https://v8.dev/)
+
+_The Need for Speed_ justifies writing browsers in C++ 🏁
+
+---
+
+class: center, middle, inverse
+
+## That makes you a
+# **System Programmer**
+### Take pride — there aren’t many.
 
 ---
 
@@ -452,6 +636,7 @@ int main() {                            SmartUser u1 = {0, {}, new SmartPassport
 
 ## 4.3 Memory: **Object Copy and Move**
 
+<!-- Refer code/obj_copy_move.cpp -->
 ``` c++
 struct Machine {                               struct Image {
   int max_memory;                                int w = 0, h = 0;
@@ -461,13 +646,13 @@ int main() {                                     int size() const { return w * h
   // shallow / trivial copy
   Machine m1 = { 1, 1.2f }, m2;                 Image(int width, int height)
   m2.max_memory = m1.max_memory;                  : w(width), h(height) { }
-  m2.dimensions = m2.dimensions;
+  m2.dimensions = m2.dimensions;                Image() : Image(0, 0) { }
                                                 ~Image() { if (pixels)
                                                               delete [] pixels; }
                                                };
   // make an image, allocate pixel data
   Image owner(4, 4);
-  owner.pixel = new uint32_t[ownersize()];
+  owner.pixels = new uint32_t[owner.size()];
 
   Image clone(owner.w, owner.h);
   clone.pixels = owner.pixels; // BAD! clone.~Image will try delete on dangling ptr
@@ -481,7 +666,7 @@ int main() {                                     int size() const { return w * h
   thief.w = owner.w; thief.h = owner.h;
   std::swap(thief.pixels, owner.pixels);
   owner.w = owner.h = 0;                  // be a responsible thief ;)
-};                                        // leave owner in a decent state
+}                                         // leave owner in a decent state
 ```
 
 ---
@@ -530,7 +715,7 @@ Canvas c[2] = { Canvas(1024), Canvas(512) };
 
 ---
 
-## 5.1: **RAII**.red[¹]: `new` in `T()`, `delete` in `~T()`
+## 5.1: **RAII**.red[¹]: acquire in `T()` and release in `~T()`
 
 C++ doesn’t come with garbage collection because we’ve RAII!
 
@@ -563,7 +748,7 @@ private:
 };
 ```
 
-.footnote[.red[¹]: RAII – _Resource Acquisition Is Initialization_ – is the cornerstone idiom of modern C++ but with the worst possible name 🤦]
+.footnote[.red[¹]: RAII – _Resource Acquisition Is Initialization_ – is the cornerstone idiom of modern C++ but with the worst possible name 😠]
 
 ---
 
@@ -634,150 +819,6 @@ struct Circle {
 - `delete` default constructor, don’t supply other constructors
 - Author a `static` class function that acts as a factory (_Named Constructor Idiom_)
 ]
-
----
-
-## Hardware vs Software
-
-* Hardware vendors make hardware dedicated for some algorithms
-  - .tag[Performance] **Using dedicated hardware is a lot faster**
-  - E.g. [GPU](http://en.wikipedia.org/wiki/GPU)s for 3D data and pixels, hardware decoders for MP3, etc.
-  - .tag[Hardware] SIMD instruction sets to perform multiple operations in one CPU cycle.  With C++ you can access them; [live example](http://coliru.stacked-crooked.com/a/256d134083aa6118) of 4-vector addition using [SSE2](https://en.wikipedia.org/wiki/SSE2)
-* When such hardware is non-existent, software implementation is provided as a fallback
-  - However many languages project nothing more than a simple model of x86; some don’t even do that!
---------------------------------------------------------------------------------
-* Python’s `int` has arbitrary-precision because internally [**all** integers are big ints](https://rushter.com/blog/python-integer-implementation/); software emulation as hardware natively can’t.
-  - Every programmer is penalized for greater flexibility
-  - Programmer is never exposed to system’s native `int`, so that expressions like this work: `2 ** 80 = 1208925819614629174706176`
-* C++ doesn’t provide it since your machine doesn’t have one!
-  - Most machines can natively only do upto 64-bit math since they’re 64-bit CPUs
-  - .tag[Flexibility] Programmer needing _big int_ can always include a library or write a custom implementation e.g. [GNU Multiple Precision](https://gmplib.org/) library is one of the fastest
-
----
-
-## **Critical** vs **Non-Critical** Software
-
-* **Turn-around vs throughput**: different settings, different expectations
-    - Example: Ordering food at a restaurant vs ordering for home delivery 🍜<br />
-        - Wasting time on _avoidable_, petty procedures means an overall delay in eating
-        - Stopping 5 mins for a smoke is OK when it’d be 30 mins restaurant ➜ home
-* Time-wise non-critical software examples
-  - Server-side code looking up voluminous database — .little[**Overarching bottleneck**: disk access, network]
-  - Content generators e.g. Doxygen — .little[**Output quality matters but not time-taken**]
-
-* **Non-critical software**: When **bottleneck is elsewhere**, optimizing every instruction or data is **pessimization**
-
-> Shaving off a few (unnoticeable) microseconds when overall lag would be in seconds is _**pessimisation**._
-
-* **Critical software**: No such luxury; picoseconds and bytes matter
-  - Very small lags every operation leads to a sluggish system
-  - You can’t put a finger on it but system feels slow
-
----
-
-class: left, inverse
-name: knuth-1
-
-## .center[**Use the Right Tool for the Right Job**]
-
----
-
-template: knuth-1
-name: knuth-2
-
-<br />
-
-.little[### We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil.]
-
----
-
-template: knuth-2
-name: knuth-3
-
-.little[##Yet **we should not pass up our opportunities in that critical 3%**.
-### .right[— Donald Knuth / Tony Hoare]]
-
----
-
-template: knuth-3
-
-#### C++ is keen about _that_ 3% — as a language community.
-
-We mean to _eek out the very last drop of juice a CPU’s got!_
-
-???
-
-We’ll discuss sane defaults when writing C++ software — just good habits, not pessimizations.
-
----
-
-## Languages for **non-critical** software <small>(C#, Python, JS, …)</small>
-
-* .tag[Performance] Most run on a VM.red[1] with garbage collection.
-
-* .tag[Flexibility] Sacrifices finer control for more features.<br />
-.little[e.g. reflection, garbage collection, rich built-in types like _lists, dictionaries/maps, big integers_, … ]
-
-* .tag[Hardware] Abstracts machine away as much as possible.<br />
-.little[Assumes programmers doesn’t know hardware; relieves programmer from worrying about hardware intricacies]
-
-## Languages for **critical** software <small>(C++, C, Rust, …)</small>
-
-* .tag[Performance] _Zero-overhead abstractions_.red[2]; as close to hardware as possible but not closer.<br />
-.little[Easy to reason about the machine code generated for your program.]
-
-* .tag[Flexibility] You choose what you want. _You only pay for what you use_.red[3].<br />
-.little[Programmer, not the language, is in charge. Believes programmer knows what s/he doing.]
-
-* .tag[Hardware] _Low-level access_ enables authoring kernel, virtual machines, …<br />
-.little[Direct access to CPU/GPU/OS facilities, _yum_!  No VM, no GC  _no middleman — no comission_.]
-
-<div>
-.footnote[.red[¹]: Not system virtual machine (like VMWare, Qemu, VirtualBox, …), but **[process virutal machine](https://en.wikipedia.org/wiki/Virtual_machine#Process_virtual_machines)** (like JVM, CLR, Python interpreter, …)]
-
-.footnote[.red[²]: `std::vector` or `std::map` should perform _almost_ like a vector or red-black tree hand-coded in assembly]
-
-.footnote[.red[³]: A key design guideline of the C++ standards committee; another is _portability_.]
-</div>
-
----
-
-# Browser is **system software**
-
-It’s complex and critical; comparable to a
-
-.pull-left[
-* Kernel
-
-* Game engine
-
-* Compiler / virtual machine
-
-* Real-time financial trading system
-]
-
-.pull-right[
-> Wasting a small time delta every operation = **systemic lag** hurting productivity.
-]
-
-Ever wondered what language virtual machines are written in?
-
-* [C#](https://stackoverflow.com/q/1324919/183120)
-* [Java](https://stackoverflow.com/a/10028154/183120)
-* [Python](https://en.wikipedia.org/wiki/CPython)
-* JavaScript
-  - Mozilla’s [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
-  - Google’s [V8](https://v8.dev/)
-
-_The Need for Speed_ justifies writing browsers in C++ 🏁
-
----
-
-class: center, middle, inverse
-
-## That makes you a
-# **System Programmer**
-### Take pride — there aren’t many.
 
 ---
 
