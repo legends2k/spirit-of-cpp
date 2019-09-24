@@ -17,6 +17,8 @@ It’s easy to get lost in the details; don’t.
 
 **Look for intuitions and at the big picture.**
 
+We want to build a _mental model_, not a rule book.
+
 ---
 
 .left-column[
@@ -243,10 +245,10 @@ template: func-2
 
 * Languages compiling to byte code, keep type information.red[1] at run-time too<br />
 .little[VM needs them for _reflection_, _garbage collection_, _JIT optimizations_, …]
-* C++ strips them and spits [object code](https://en.wikipedia.org/wiki/Object_code)<br />
+* .tag[Hardware] C++ strips them and spits [object code](https://en.wikipedia.org/wiki/Object_code)<br />
 .little[Data and code vanish into zeros and ones.  _Raw binary_, just as advertised 👍]
 
-> .tag[Flexibility] .tag[Performance] C++ data types — built-ins & custom — are raw; no base `Object` under the hood.  They **inherit nothing**.red[2]
+> .tag[Flexibility] .tag[Performance] C++ data types — built-ins & custom — are raw; no base `Object` under the hood.  They **inherit nothing**..red[2]
 
 .footnote[.red[¹]: Commonly called _boxed datatypes_ e.g. `Integer` inheriting `Java.lang.Object` wraps the actual integer. C++’s `int` is machine integer.]
 .footnote[.red[²]: You don’t pay for what you don’t use.]
@@ -320,15 +322,13 @@ class: center, middle, inverse
 
 ## Hardware Limits and **Software Emulation**
 
-* Take an example architecture [X64](https://en.wikipedia.org/wiki/64-bit_computing)
-
-* Maximum representable `int` on X64 `0xffff'ffff'ffff'ffff = 18446744073709551615`
+* Consider an architecture, say [x64](https://en.wikipedia.org/wiki/64-bit_computing); maximum representable `int` on x64 is `0xffff'ffff'ffff'ffff` = `18446744073709551615`
 
 * Values, instructions, addresses cannot exceed as CPU cannot understand a larger _integer_
 
 * How then to represent larger integers?  _Bit Integers_ a.k.a _Big Numbers_
 
-* Make an array of 64-bit integers each representing a part of the constituting big integer
+* Make an array of 64-bit integers each representing a part of the constituted big integer
 
 * e.g. for `1 << 80`, you’d need 3 integers; result, if shifted again by `20`, prefix one more, …
 
@@ -340,11 +340,11 @@ class: center, middle, inverse
 // elements             4       3       2       1       0
 ```
 
-* **Fun Exercise**: Try implementing a big integer class using a `std::vector<uint8_t>`
+* **Fun Exercise**: Implement `class BigInt` using a `std::vector<uint8_t>`
   - Implement arithmetic and shift operators
   - Needs overflow/underflow detection and bit manipulation
 
-* Use rudimentary hardware features as building blocks to build a higher abstraction
+* Use rudimentary hardware features as building blocks to build higher abstractions
 
 ---
 
@@ -356,7 +356,7 @@ class: center, middle, inverse
 - SIMD instruction sets to perform multiple operations in one CPU cycle.
 ]
 * .tag[Performance] **Using dedicated hardware is _a lot_ faster**
-* .tag[Flexibility] Software emulation provided as a fallback when dedicated hardware absent
+* Software emulation provided as a fallback when dedicated hardware absent – _slow_
 .little[
 - e.g. Graphics using CPU when dedicated GPU is missing
 ]
@@ -367,12 +367,12 @@ class: center, middle, inverse
   - Every programmer penalized for flexibility so that expressions like `2 ** 80` work
 * C++ only provides `int`, and no more, since your machine only has that!
 
-  - .tag[Flexibility] Only a module needing `BigInt` can include a library or write one
-.little[- e.g. [GNU Multiple Precision](https://gmplib.org/) library is one of the fastest]
+  - .tag[Flexibility] Include a library or write one just for the module needing `BigInt`
+.little[- e.g. [GNU Multiple Precision](https://gmplib.org/) library is one of the fastest out there]
   - .tag[Hardware] .tag[Performance] Exposes dedicated hardware by providing direct access
 .little[- Using [SSE2](https://en.wikipedia.org/wiki/SSE2) is just a header away: [live example](https://godbolt.org/z/OuwQE1) of a 4-vector addition using 1 assembly instruction]
 
-> **You only pay for what you use**. — Language Design Principle
+> **You only pay for what you use**. — C++ Design Principle
 
 ---
 
@@ -512,7 +512,7 @@ class: center, middle, inverse
 - **Fast**: _really_ fast! 🚀
 .little[
 - Allocation is a mere register increment/decrement
-- Spatial and temporal coherence
+- Spatial and temporal coherence; cache-friendly
 ]
 - Limited scope
 .little[
@@ -547,10 +547,10 @@ class: center, middle, inverse
 .left[> **Stack-allocate** if size known at compile-time, within scope and within size limit;  **heap-allocate** otherwise.]
 
 ``` c++
-void loadCount(int* count);
+void LoadCount(int* count);
 // THE GOOD          // THE BAD              // THE UGLY
 int c = 0;           int* c = new int;       unique_ptr<int> c = make_unique<int>();
-loadCount(&c);       getCount(c);            getCount(c.get());
+LoadCount(&c);       LoadCount(c);           LoadCount(c.get());
                      delete c;
 ```
 
@@ -626,7 +626,7 @@ int main() {                            SmartUser u1 = {0, {}, new SmartPassport
   int* thief = nullptr;     //            +-------+     .------.     +-------+
   std::swap(owner, thief);  //            | 0x100 |---->|  12  |     |  0x0  |---->X
 // super cheap                            +-------+     '------'     +-------+
-//   - just an interger swap                              0x100
+//   - just an integer swap                               0x100
 //   - no memory allocation
 //                                          owner         data         thief
 //                                        +-------+     .------.     +-------+
@@ -722,24 +722,24 @@ Canvas c[2] = { Canvas(1024), Canvas(512) };
 Methods are functions with a hidden first argument for `this` — the object pointer
 
 ``` c++
-struct Widget {
-  void Scroll(int clicks) { y_ += (clicks * OFFSET); }
-  int GetScale() const { return scale_; }  // const this
-  void SetScale(int s) { scale_ = s; }
-
+struct Widget : public Point {
+  void Scroll(int clicks) { y_ += (clicks * OFFSET); }  // change state of object
+  void SetScale(int s) { scale_ = s; }                  // directly or indirectly
+  int GetScale() const { return scale_; }  // just observe; const guarantees
+                                           // no state change; no write to data members
+                                           // or call to non-const methods
 private:
-  constexpr static int OFFSET = 3;
-  float x_, y_;
+  constexpr static int OFFSET = 3;         // compile-time; stripped at run-time
   int scale_;
 };
 ```
 
-Equivalent to
+Roughly equivalent to
 
 ``` c++
-struct __Widget {    // object has only the data (member variables)
-  float x_, y_;
-  int scale_;
+struct __Widget {    // object only has data (member variables)
+  float x_, y_;      // base class members first and in order of declaration
+  int scale_;        // code operating on it isn't part of it
 };
 
 // code elsewhere (.text segment)
@@ -747,107 +747,81 @@ void __Widget_Scroll(__Widget* w, int clicks) {
   w->y_ += (clicks * 3);  // OFFSET resolved at compiled-time
 }
 
-int __GetScale(const __Widget* w) { return w->scale_; }  // const this
+int __GetScale(const __Widget* w) { return w->scale_; }
 ```
 
 ---
 
-# What are little objects made of?
+## 5.2 Function / Method **Dispatch**
 
-Show what’s a variable made of: raw memory interpreted by CPU based on type.
-Show the stack and heap; show the stack growing and explain.
+* Simple Function/Method calls
+  - Most function calls in C++ are glorified `JMP` instructions (assembly)
+  - Exact offset of functions’ code in memory known at compile-time (_Static typing_)
+  - Compiler _dispatches_ function calls with `JMP` to known offset
+* Sometimes exact function is known only at run-time; we need **Dynamic Dispatch**.red[1]
 
-``` c++
-            Widget w1              Widget w2              Widget w2
-       +-------------------+  +-------------------+  +-------------------+
-       |                   |  |                   |  |                   |
-       |    float x_       |  |    float x_       |  |    float x_       |
-       |                   |  |                   |  |                   |
-       +-------------------+  +-------------------+  +-------------------+
-       |                   |  |                   |  |                   |
-       |    float y_       |  |    float y_       |  |    float y_       |
-       |                   |  |                   |  |                   |
-       +-------------------+  +-------------------+  +-------------------+
-       |                   |  |                   |  |                   |
-       |    int scale_     |  |    int scale_     |  |    int scale_     |
-       |                   |  |                   |  |                   |
-       +-------------------+  +-------------------+  +-------------------+
+* Useful for abstractions fulfilled by another class / programmer — interfaces, plug-ins, … i.e. to facilitate _separation of concerns_ .red[2]
 
-```
+* Example 1: `IDisplay::clear()` needn’t know if it’s a `CLcdDisplay` or `CCrtMonitor`
 
-* Only instance variables make up an object; use `sizeof(Widget)` to check size
+* Example 2: a text editor with plug-ins
+.little[
+- Text editor declares, **not defines**, a `bool IPlugin::post-process(std::string)`
+- Every plug-in author implements (defines) it differently
+- When compiling editor the actual function’s code is non-existent; offset unknown – can’t to static dispatch
+- At run-time, if a plug-in SO/DLL is present, load function (`dlsym` or `GetProcAddress`) and dispatch dynamically
+- .tag[Flexibility] **Both editor and plug-in code can build independently**! Weak coupling FTW 💪
+]
 
-* No code is within the object
-
-* Static variables aren’t part of the object
-
-* `Widget::Scroll` acts on any object of type `Widget`, passed in as first argument
+.footnote[.red[¹]: a.k.a. _double dispatch_; broadly known as (run-time) _polymorphism_]
+.footnote[.red[²]: The _S_ in [SOLID Principles](https://en.wikipedia.org/wiki/SOLID_(object-oriented_design)]
 
 ---
 
-# 3.1 Function/method **dispatch**
-
-* Most function calls in C++ are glorified `JMP` instructions (assembly)
-* **Static typing**: **at compile-time** we know all types, sizes, functions, parameters,…
-
-* Exact offset where functions code resides in memory is known at compile-time
-
-* The compiler _dispatches_ this function call with the exact `JMP` instruction
-
-* Sometimes exact function is known only at run-time: we need **dynamic dispatch**
-
-* Useful for abstractions; situations where caller doesn’t know the exact function to run
-
-* **Need**: plug-ins, interfaces, separation of concern, etc. E.g. text editor with plugins
-  - Text editor declares (not defines) a `bool post-process(std::string)` function
-  - Every plug-in author implements (defines) it differently
-  - When compiling editor the actual function’s code is non-existent; offset unknown
-  - At run-time, if a plug-in SO/DLL is present, function is dynamically dispatched
-  - **Decouples code**; both editor and plug-in code can build independently
-
----
-
-# 3.2 Virtual methods and interfaces
+## 5.3 Virtual methods, Interfaces and Concretes
 
 ``` c++
 struct IDisplay {
-  virtual ~IDisplay() { }
-  virtual void Init() { }
-  // pure virtual makes IDisplay an abstract base class (ABC) / interfaces
-  // can't be instantiated; need to have a concerte implementation
+  virtual void Init() { }  // virtual, not pure virtual, method; no `= 0`
+                           // A concrete class may / may not override.
+  virtual ~IDisplay() { }  // Interfaces MUST have virtual destructor.
+
+  // Pure virtual makes IDisplay an abstract base class (ABC) / interface.
+  // It can't be instantiated; need to have a concerte implementation.
+  // A concrete class MUST override these to be called concrete.
   virutal Size GetResolution() const = 0;
   virtual void PutPixel(float x, float y, Color c) = 0;
 };
 
-struct CCRTMonitor : public IDisplay {
+struct CCrtMonitor : public IDisplay {
   Size GetResolution() const override { return my_resolution_; }
   void PutPixel(float x, float y, Color c) override {
     /* put color in frame buffer */
-  }                     .
+  }
 
 private:
   void* frame_buffer_;
   Size resolution;
 };
 
-struct CProjector : public IDisplay {
-  /* similar definitions */
+struct CProjector : public IDisplay {  // still an ABC as not all pure virtuals
+  Size GetResolution() const { }       // are overridden
 };
 
-struct CLCDDisplay : public IDisplay {
+struct CLcdDisplay : public IDisplay {
   /* similar definitions */
 };
 ```
 
 ---
 
-# 3.3 Memory Layout
+## 5.4 Memory Layout of Objects with Virtual
 
 ``` c++
-  CCRTMonitor m1 in memory    .--->  Virtual table of CCRTMonitor in ".text"
+  CCrtMonitor m1 in memory    .--->  Virtual table of CCrtMonitor in ".text"
  +-------------------------+  |    +-------------------------------------------+
  |                         |  |    |                                           |
- |   void* vptr            |--’    |  Offset to ~CCRTMonitor()                 |
+ |   void* vptr            |--’    |  Offset to ~CCrtMonitor()                 |
  |                         |       |                                           |
  |-------------------------|       |-------------------------------------------|
  |                         |       |                                           |
@@ -864,14 +838,53 @@ struct CLCDDisplay : public IDisplay {
  +-------------------------+       +-------------------------------------------+
 ```
 
-* Compiler inserts a `vptr` to all objects of type `CCRTMonitor`
-* They all point to `CCRTMonitor::vtable`
-* Objects of type `CLCDDisplay` also get their own `vptr` pointing to `CLCDDisplay::vtable`
-* Dynamic dispatch at run-time **if these methods are called through a pointer / reference of the interface**
+* Compiler inserts a `vptr` to all objects of type `CCrtMonitor`
+
+* They all point to `CCrtMonitor::vtable`
+
+* Objects of type `CLcdDisplay` also get their own `vptr` pointing to `CLcdDisplay::vtable`
 
 ---
 
-## 5.1: **RAII**.red[¹]: acquire in `T()` and release in `~T()`
+## 5.5 Virtual Methods: Usage
+
+``` c++
+struct IDisplay { virtual ~IDisplay() { } };
+
+struct CCrtMonitor : public IDisplay { ~CCrtMonitor() { /* cleanup stuff */ } };
+
+class CLcdDisplay : public IDisplay { /* ... some code ... */ };
+
+IDisplay* MakeDisplay(DisplayParams params) {  // factory function
+  if (params.resolution <= 480)
+    return new CCrtMonitor;
+  else
+    return new CLcdDisplay;
+}
+
+int main() {
+  IDisplay od;    // Error: can't instantiate an abstract class
+  IDisplay *pd;   // OK: pointer to abstract IDisplay
+
+  CCrtMonitor crtMon;
+  crtMon.PutPixel(10, 5, Color(255, 0, 0));  // static dispatch
+
+  pd = MakeDisplay(params);
+  pdf->PutPixel(20, 3, Color(0, 0, 255));     // dynamic dispatch
+
+  delete pd;    // Destroy object behind IDisplay*.  Calls
+                // 1. ~CCrtMonitor properly (thanks to virtual ~IDisplay)
+                // 2. ~IDisplay
+                // 3. releases memory
+                // Without virtual base destructor step 1 will be skipped!
+                // Cleanup code in ~CCrtMonitor won't be run!!
+}
+```
+
+---
+
+
+## 6: **RAII**.red[¹]: acquire in `T()` and release in `~T()`
 
 .tag[Flexibility] .tag[Performance] C++ doesn’t come with garbage collection because it has RAII!
 
@@ -908,7 +921,7 @@ private:
 
 ---
 
-## 5.2: **RAII** recursively
+## 6.1: **RAII** recursively
 
 Didn’t we say _NO `new` or `delete`_?  Let’s try again.
 
@@ -943,7 +956,7 @@ Recursive since `FileReader` – a smart wrapper – is now embed-able in anothe
 
 ---
 
-## 5.3: **Constructor**: Initialize invariants
+## 5.6: **Constructor**: Initialize invariants
 
 * Auto-generated default constructor is a no-op; members would be garbage values
 * Write a constructor to initialize states / data members
@@ -969,7 +982,8 @@ struct Circle {
 ```
 
 * Prefer member initializers over setting them in the body
-* Make constructors `explicit` to make sure objects aren’t created on the fly
+* Make constructors `explicit` to prevent on-the-fly creation<br />
+.little[e.g. `DrawFigure(float) ≠ DrawFigure(Circle(float)) // for heavy-classes, on-the-fly creation is a big red-sign`]
 * Want to control creation?
 .little[
 - `delete` default constructor, don’t supply other constructors
@@ -978,17 +992,134 @@ struct Circle {
 
 ---
 
-# C++ Constituents
+## 1.1 **Temporaries, References** .little[l-values, r-values, oh-my-values!!]
 
-* Language standard (C++03, C++11, C++14, C++17, …)
-  - An ISO certified document defining grammar and semantics
-  - Talks about results and guarantees only (_what_ but not _how_)
-  - Freedom to implementations using _implementation-defined_, _unspecified_, _**undefined**_
-  - Programmers bank on it for maximum portability
-* Implementation (G++, Clang, MSVC++)
-  - A compiler that confirms to the standard (the _how_)
-  - Free to do anything as long as results and guarantees are met
-* Library (libstdc++, libc++, Boost …)
-  - Collection of reusable code written using pure language facilities or other libraries
-  - Distributed as source {`.h` and/or `.cpp`}, static library {`.h`, `.a/.lib`}, dynamic library {`.h`, `.so/.dll/.dylib`}
-  - .tag[Flexibility] Python provides list and dictionary as a language-feature, while C++ gives it as library facilities
+* _References_ are just nicknames; underlying object is exactly the same
+.little[
+* Edit the reference and you edit the value
+* `const` reference simply disallows editing object through that reference
+]
+
+* _Temporaries_ are compiler-generated objects during expression evaluation
+
+``` c++
+Size Circle::ComputeBounds() { return Size(width_, height_); }
+
+c.ComputeBounds();  // returned Size is a temporary alive until expression evaluation
+```
+
+* Objects only have types; expressions have a **non-reference** _type_ and a _value category_
+
+``` c++
+Image i1, &i2, &&i3;  // objects of type lvalue, rvalue-reference, lvalue-reference
+std::move(i2)         // expression type: Image, value category: xvalue
+```
+
+* _lvalue_: have identity, cannot be stolen e.g. `int a; Circle &&c;`
+
+* _xvalue_: have identity, can be stolen e.g. what’s returned from `std::move(c)`
+
+* _prvalue_: no identity, can be stolen e.g. `str.substr(1, 2)`
+
+---
+
+name: copy-move-ctor1
+
+## 5.7 **Copy** and **Move Constructors**
+
+``` c++
+struct Image {
+  int width_; int height_; std::vector<std::bytes> pixels_;
+
+  // copy constructor for deep copying
+  Image(const Image& that) : w_(that.w_), h_(that.h_) {
+    const auto count = w_ * h_;
+    if (that.pixels_ && (count > 0)) {
+      this->pixels_.resize(count);
+      std::copy_n(that.pixels_, count, this->pixels_);
+    }
+  }
+  // move constructor
+  Image(Image&& that) : w_(that.w_)
+                      , h_(that.h_)
+                      , pixels_(std::move(that.pixels_)) {
+  }
+};
+```
+
+---
+
+template: copy-move-ctor1
+
+But wait! RAII recursively, right? Wouldn’t the defaults suffice? They totally do!! 👌
+
+``` c++
+class Image {
+  // ... and we're done!!!  Wisely preferred RAII wrapper (vector) over raw pointers
+
+  // What would implicitly generated defaults look like? Move, same as above. Copy:
+  //
+  // Image(const Image& that) : w_(that.w_), h_(that.h_), pixels_{that.pixels_} {
+  // }                      // std::vector's copy constructor does the right thing 👍
+};
+```
+
+---
+
+## 5.8 **Copy** and **Move Assignment** operators
+
+``` c++
+class Image {
+  // operator methods are just like any other methods; can be called with expression
+  // Image i1, i2;  i1 = i2 is the same i1.operator=(i2)
+
+  // copy-assignment operator, similar to copy ctor but without the memory alloc
+  Image& operator= (const Image &that) {
+    this->w_ = that->w_;
+    this->h_ = that->h_;
+    this->pixels_ = that->pixels_;  // std::vector::operator= does deep copy, yay!
+    return *this;
+  }
+  // move-assignment operator
+  Image& operator=(Image&& that) {
+    this->w_ = std::move(that->w_);
+    this->h_ = std::move(that->h_);
+    this->pixels_ = std::move(that->pixels_);  // std::vector::operator= does move, yay!
+    return *this;
+  }
+  
+  // You only used smart types as members, didn't ya, you sly fox! Say "yay" and
+  // skip writing them both: Bask in the glory of _The Rule of Zero_ 😏
+};
+```
+
+- Implicitly generated move constructor will fallback to copy if a type isn’t move-friendly e.g. is a POD or has no move constructor
+- No implicit generation if even one member is non-copyable or immovable
+
+---
+
+## 2.1 Function **Parameter and Return Type** — Defaults
+
+* `Out` parameter a.k.a return value: `X f()` – by value
+.little[
+- xvalue would get moved
+- Even for move-unfriendly types compiler does _Return Value Optimization_ / _Copy Elision_
+]
+
+* `Out` but expensive to move (e.g. `std::vector<BigPOD>`): `f(X&)` or `f(X*)` – by reference
+
+--------------------------------------------------------------------------------
+
+* `In/Out` parameter: `f(X&)` – by reference
+
+--------------------------------------------------------------------------------
+
+* `In` parameter: `f(const X&)` – by `const` reference
+
+* `In` but cheap or impossible to copy (e.g. `int`, `std::unique_ptr`): `f(X)`  – by value
+
+* `In` but need ownership: `f(X&&)` – rvalue reference
+
+* `In` but need copy: give two overloads
+  1. `f(const X&)` – `const` reference – for those who want to keep theirs
+  2. `f(X&&)` – rvalue reference – for those who want to give up theirs
