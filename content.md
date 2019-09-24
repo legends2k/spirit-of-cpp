@@ -246,7 +246,7 @@ template: func-2
 * C++ strips them and spits [object code](https://en.wikipedia.org/wiki/Object_code)<br />
 .little[Data and code vanish into zeros and ones.  _Raw binary_, just as advertised 👍]
 
-> .tag[Flexibility] C++ data types **inherit nothing**.red[2] — both in-built and custom.  No compiler-supplied base `Object` under the hood.
+> .tag[Flexibility] .tag[Performance] C++ data types — built-ins & custom — are raw; no base `Object` under the hood.  They **inherit nothing**.red[2]
 
 .footnote[.red[¹]: Commonly called _boxed datatypes_ e.g. `Integer` inheriting `Java.lang.Object` wraps the actual integer. C++’s `int` is machine integer.]
 .footnote[.red[²]: You don’t pay for what you don’t use.]
@@ -348,7 +348,7 @@ class: center, middle, inverse
 
 ---
 
-## **Zero Cost Abstraction** .little[answer to 2⁸⁰, life, …]
+## **Zero Cost Abstraction** .little[answer to 2⁸⁰, life and beyond …!]
 
 * .tag[Hardware] Manufacturers make _dedicated_ hardware for certain algorithms
 .little[
@@ -396,6 +396,37 @@ class: center, middle, inverse
 
 ---
 
+## Languages for **non-critical** software <small>(C#, Python, JS, …)</small>
+
+* .tag[Performance] Most run on a VM.red[1] with garbage collection.
+
+* .tag[Flexibility] Sacrifices finer control for more features.<br />
+.little[e.g. reflection, garbage collection, rich built-in types like _lists, dictionaries/maps, big integers_, … ]
+
+* .tag[Hardware] Abstracts machine away as much as possible.<br />
+.little[Assumes programmers doesn’t know hardware; relieves programmer from worrying about hardware intricacies]
+
+## Languages for **critical** software <small>(C++, C, Rust, …)</small>
+
+* .tag[Performance] _Zero-overhead abstractions_.red[2]; as close to hardware as possible but not closer.<br />
+.little[Easy to reason about the machine code generated for your program.]
+
+* .tag[Flexibility] You choose what you want. _You only pay for what you use_.red[3].<br />
+.little[Programmer, not the language, is in charge. Believes programmer knows what s/he doing.]
+
+* .tag[Hardware] _Low-level access_ enables authoring kernel, virtual machines, …<br />
+.little[Direct access to CPU/GPU/OS facilities, _yum_!  No VM, no GC  _no middleman — no comission_.]
+
+<div>
+.footnote[.red[¹]: Not system virtual machine (like VMWare, Qemu, VirtualBox, …), but **[process virutal machine](https://en.wikipedia.org/wiki/Virtual_machine#Process_virtual_machines)** (like JVM, CLR, Python interpreter, …)]
+
+.footnote[.red[²]: `std::vector` or `std::map` should perform _almost_ like a vector or red-black tree hand-coded in assembly]
+
+.footnote[.red[³]: A key design guideline of the C++ standards committee; another is _portability_.]
+</div>
+
+---
+
 class: left, inverse
 name: knuth-1
 
@@ -429,37 +460,6 @@ We mean to _eek out the very last drop of juice a CPU’s got!_
 ???
 
 We’ll discuss sane defaults when writing C++ software — just good habits, not pessimizations.
-
----
-
-## Languages for **non-critical** software <small>(C#, Python, JS, …)</small>
-
-* .tag[Performance] Most run on a VM.red[1] with garbage collection.
-
-* .tag[Flexibility] Sacrifices finer control for more features.<br />
-.little[e.g. reflection, garbage collection, rich built-in types like _lists, dictionaries/maps, big integers_, … ]
-
-* .tag[Hardware] Abstracts machine away as much as possible.<br />
-.little[Assumes programmers doesn’t know hardware; relieves programmer from worrying about hardware intricacies]
-
-## Languages for **critical** software <small>(C++, C, Rust, …)</small>
-
-* .tag[Performance] _Zero-overhead abstractions_.red[2]; as close to hardware as possible but not closer.<br />
-.little[Easy to reason about the machine code generated for your program.]
-
-* .tag[Flexibility] You choose what you want. _You only pay for what you use_.red[3].<br />
-.little[Programmer, not the language, is in charge. Believes programmer knows what s/he doing.]
-
-* .tag[Hardware] _Low-level access_ enables authoring kernel, virtual machines, …<br />
-.little[Direct access to CPU/GPU/OS facilities, _yum_!  No VM, no GC  _no middleman — no comission_.]
-
-<div>
-.footnote[.red[¹]: Not system virtual machine (like VMWare, Qemu, VirtualBox, …), but **[process virutal machine](https://en.wikipedia.org/wiki/Virtual_machine#Process_virtual_machines)** (like JVM, CLR, Python interpreter, …)]
-
-.footnote[.red[²]: `std::vector` or `std::map` should perform _almost_ like a vector or red-black tree hand-coded in assembly]
-
-.footnote[.red[³]: A key design guideline of the C++ standards committee; another is _portability_.]
-</div>
 
 ---
 
@@ -737,7 +737,6 @@ private:
 Equivalent to
 
 ``` c++
-// a simple struct with just data; called POD (plain-old data) at times
 struct __Widget {    // object has only the data (member variables)
   float x_, y_;
   int scale_;
