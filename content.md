@@ -318,7 +318,7 @@ class: center, middle, inverse
 
 ---
 
-## Hardware Limits and Big Ints
+## Hardware Limits and **Software Emulation**
 
 * Take an example architecture [X64](https://en.wikipedia.org/wiki/64-bit_computing)
 
@@ -344,16 +344,18 @@ class: center, middle, inverse
   - Implement arithmetic and shift operators
   - Needs overflow/underflow detection and bit manipulation
 
+* Use rudimentary hardware features as building blocks to build a higher abstraction
+
 ---
 
-## 2⁸⁰ in C++ (and Python)
+## **Zero Cost Abstraction** .little[answer to 2⁸⁰, life, …]
 
 * .tag[Hardware] Manufacturers make _dedicated_ hardware for certain algorithms
-* .tag[Performance] **Using dedicated hardware is _a lot_ faster**
 .little[
 - E.g. [GPU](http://en.wikipedia.org/wiki/GPU)s for 3D data and pixels, hardware decoders for MP3, etc.
 - SIMD instruction sets to perform multiple operations in one CPU cycle.
 ]
+* .tag[Performance] **Using dedicated hardware is _a lot_ faster**
 * .tag[Flexibility] Software emulation provided as a fallback when dedicated hardware absent
 .little[
 - e.g. Graphics using CPU when dedicated GPU is missing
@@ -367,7 +369,7 @@ class: center, middle, inverse
 
   - .tag[Flexibility] Only a module needing `BigInt` can include a library or write one
 .little[- e.g. [GNU Multiple Precision](https://gmplib.org/) library is one of the fastest]
-  - .tag[Hardware] Exposes dedicated hardware by providing direct access
+  - .tag[Hardware] .tag[Performance] Exposes dedicated hardware by providing direct access
 .little[- Using [SSE2](https://en.wikipedia.org/wiki/SSE2) is just a header away: [live example](https://godbolt.org/z/OuwQE1) of a 4-vector addition using 1 assembly instruction]
 
 > **You only pay for what you use**. — Language Design Principle
@@ -715,124 +717,18 @@ Canvas c[2] = { Canvas(1024), Canvas(512) };
 
 ---
 
-## 5.1: **RAII**.red[¹]: acquire in `T()` and release in `~T()`
+## 5.1 **Methods**: Accessors and Mutators
 
-C++ doesn’t come with garbage collection because we’ve RAII!
-
-``` c++
-#include <cstddef>  // ← for std::byte; preferred over uint8_t
-
-struct FileReader {       // a crude smart wrapper
-
-  FileReader(std::string path) {
-    // accquire resources in the constructor
-    file_ = fopen(path.c_str(), 'r');
-    if (file_) {
-      data_ = new std::byte[100];
-      if (data_) fread(data_, sizeof(std::byte), 100, file_);
-    }
-  }
-
-  ~FileReader() {
-    // destruct resources in the destructor
-    if (file_)
-      fclose(file_);
-
-    if (data_)
-      delete [] data_;
-  }
-
-private:
-  std::byte* data_ = nullptr;
-  FILE* file_ = nullptr;
-};
-```
-
-.footnote[.red[¹]: RAII – _Resource Acquisition Is Initialization_ – is the cornerstone idiom of modern C++ but with the worst possible name 😠]
-
----
-
-## 5.2: **RAII** recursively
-
-Didn’t we say _NO `new` or `delete`_?  Let’s try again.
-
-``` c++
-struct FileReader {       // a smart wrapper with no low-level fiddling
-  File(std::string path) {
-    file_.reset(fopen(path.c_str(), 'r'));
-    if (file_) {
-      const auto file_size = getFileSize(file_.get()); // get() gives underlying T*
-      data_.resize(file_size);                         // auto resize vector's memory
-      fread(data_.data(), sizeof(std::byte), file_size, file_);
-    }
-  }
-
-  // ~FileReader() — Look ma, no destructor!
-  // Under the hood, when some `File f` gets destroyed, these are called (in order)
-  //     1. ~unique_ptr<FILE, FileCloser> calls fclose()
-  //     2. ~vector<std::byte>() auto deletes memory its ptr_ is pointing at
-  //     3. ~File() finally but since it's a no-op, it'd be optimized away
-private:
-  std::unique_ptr<FILE, FileCloser> file_;  // unique_ptr auto closes file
-  std::vector<std::byte> data_; // vector manages bytes, auto resizes array
-};
-// Functor is a function with states. This function takes a unique_ptr's T*.
-struct FileCloser {  // Callable this: FileCloser fc;  fc(file_ptr);
-  void operator()(FILE* f) {
-    if (f) fclose(f);
-  }
-};
-```
-Recursive since `FileReader` – a smart wrapper – is now embed-able in another higher abstraction 💡 When _that_ gets destroyed, `FileReader` will automatically release its resources.
-
----
-
-## 5.3: **Constructor**: Initialize invariants
-
-* Auto-generated default constructor is a no-op; members would be garbage values
-* Write a constructor to initialize states / data members
-* Prefer in-class initializers; sometimes no constructors may be needed
-
-``` c++
-struct Point {
-  float x, y;    // garbage by default
-};
-
-struct Circle {
-
-  float radius = 1.0f;  // in-class initializer
-  Point centre;         // garbage if created using Circle()
-
-  Circle() = default;
-
-  Circle(float r) : radius(r), centre(0.0f, 0.0f) {  // member initializer list
-  }
-
-  static Circle* MakeCircle(float radius, Point centre) { /* return a circle */ }
-};
-```
-
-* Prefer member initializers over setting them in the body
-* Make constructors `explicit` to make sure objects aren’t created on the fly
-* Want to control creation?
-.little[
-- `delete` default constructor, don’t supply other constructors
-- Author a `static` class function that acts as a factory (_Named Constructor Idiom_)
-]
-
----
-
-# 2. **Methods**
-
-Functions with a hidden first argument for object pointer:
+Methods are functions with a hidden first argument for `this` — the object pointer
 
 ``` c++
 struct Widget {
   void Scroll(int clicks) { y_ += (clicks * OFFSET); }
+  int GetScale() const { return scale_; }  // const this
+  void SetScale(int s) { scale_ = s; }
 
 private:
   constexpr static int OFFSET = 3;
-
   float x_, y_;
   int scale_;
 };
@@ -851,6 +747,8 @@ struct __Widget {    // object has only the data (member variables)
 void __Widget_Scroll(__Widget* w, int clicks) {
   w->y_ += (clicks * 3);  // OFFSET resolved at compiled-time
 }
+
+int __GetScale(const __Widget* w) { return w->scale_; }  // const this
 ```
 
 ---
@@ -971,6 +869,113 @@ struct CLCDDisplay : public IDisplay {
 * They all point to `CCRTMonitor::vtable`
 * Objects of type `CLCDDisplay` also get their own `vptr` pointing to `CLCDDisplay::vtable`
 * Dynamic dispatch at run-time **if these methods are called through a pointer / reference of the interface**
+
+---
+
+## 5.1: **RAII**.red[¹]: acquire in `T()` and release in `~T()`
+
+.tag[Flexibility] .tag[Performance] C++ doesn’t come with garbage collection because it has RAII!
+
+``` c++
+#include <cstddef>  // ← for std::byte; preferred over uint8_t
+
+struct FileReader {       // a crude smart wrapper
+
+  FileReader(std::string path) {
+    // accquire resources in the constructor
+    file_ = fopen(path.c_str(), 'r');
+    if (file_) {
+      data_ = new std::byte[100];
+      if (data_) fread(data_, sizeof(std::byte), 100, file_);
+    }
+  }
+
+  ~FileReader() {
+    // destruct resources in the destructor
+    if (file_)
+      fclose(file_);
+
+    if (data_)
+      delete [] data_;
+  }
+
+private:
+  std::byte* data_ = nullptr;
+  FILE* file_ = nullptr;
+};
+```
+
+.footnote[.red[¹]: RAII – _Resource Acquisition Is Initialization_ – is the cornerstone idiom of modern C++ but with the worst possible name 😠]
+
+---
+
+## 5.2: **RAII** recursively
+
+Didn’t we say _NO `new` or `delete`_?  Let’s try again.
+
+``` c++
+struct FileReader {       // a smart wrapper with no low-level fiddling
+  File(std::string path) {
+    file_.reset(fopen(path.c_str(), 'r'));
+    if (file_) {
+      const auto file_size = getFileSize(file_.get()); // get() gives underlying T*
+      data_.resize(file_size);                         // auto resize vector's memory
+      fread(data_.data(), sizeof(std::byte), file_size, file_);
+    }
+  }
+
+  // ~FileReader() — Look ma, no destructor!
+  // Under the hood, when some `File f` gets destroyed, these are called (in order)
+  //     1. ~unique_ptr<FILE, FileCloser> calls fclose()
+  //     2. ~vector<std::byte>() auto deletes memory its ptr_ is pointing at
+  //     3. ~File() finally but since it's a no-op, it'd be optimized away
+private:
+  std::unique_ptr<FILE, FileCloser> file_;  // unique_ptr auto closes file
+  std::vector<std::byte> data_; // vector manages bytes, auto resizes array
+};
+// Functor is a function with states. This function takes a unique_ptr's T*.
+struct FileCloser {  // Callable this: FileCloser fc;  fc(file_ptr);
+  void operator()(FILE* f) {
+    if (f) fclose(f);
+  }
+};
+```
+Recursive since `FileReader` – a smart wrapper – is now embed-able in another higher abstraction 💡 When _that_ gets destroyed, `FileReader` will automatically release its resources.
+
+---
+
+## 5.3: **Constructor**: Initialize invariants
+
+* Auto-generated default constructor is a no-op; members would be garbage values
+* Write a constructor to initialize states / data members
+* Prefer in-class initializers; sometimes no constructors may be needed
+
+``` c++
+struct Point {
+  float x, y;    // garbage by default
+};
+
+struct Circle {
+
+  float radius = 1.0f;  // in-class initializer
+  Point centre;         // garbage if created using Circle()
+
+  Circle() = default;
+
+  Circle(float r) : radius(r), centre(0.0f, 0.0f) {  // member initializer list
+  }
+
+  static Circle* MakeCircle(float radius, Point centre) { /* return a circle */ }
+};
+```
+
+* Prefer member initializers over setting them in the body
+* Make constructors `explicit` to make sure objects aren’t created on the fly
+* Want to control creation?
+.little[
+- `delete` default constructor, don’t supply other constructors
+- Author a `static` class function that acts as a factory (_Named Constructor Idiom_)
+]
 
 ---
 
