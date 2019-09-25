@@ -21,6 +21,18 @@ We want to build a _mental model_, not a rule book.
 
 ---
 
+class: center, middle, inverse
+
+# **Experts**
+<br />
+## Anything you say.red[1] can and will probably be taken offline
+<br />
+### .left[When starting out, detailing every nook and cranny of a concept would be detrimental.]
+
+.footnote[.red[¹]: that goes too deep, deviates from the topic or only shows _our_ prowess]
+
+---
+
 .left-column[
   ## Why Use C++?
   #### Why not Python, JavaScript, …?
@@ -314,7 +326,7 @@ char *p = &c;            ,--------------------------------------------------
 
 class: center, middle, inverse
 
-### Yeah.. yeah!
+### Yeah.. yeah! 😈
 
 # What about **2⁸⁰** ?
 
@@ -348,6 +360,8 @@ class: center, middle, inverse
 
 ---
 
+name: zero-cost-abs-1
+
 ## **Zero Cost Abstraction** .little[answer to 2⁸⁰, life and beyond …!]
 
 * .tag[Hardware] Manufacturers make _dedicated_ hardware for certain algorithms
@@ -355,16 +369,27 @@ class: center, middle, inverse
 - E.g. [GPU](http://en.wikipedia.org/wiki/GPU)s for 3D data and pixels, hardware decoders for MP3, etc.
 - SIMD instruction sets to perform multiple operations in one CPU cycle.
 ]
-* .tag[Performance] **Using dedicated hardware is _a lot_ faster**
-* Software emulation provided as a fallback when dedicated hardware absent – _slow_
+* .tag[Performance] **Using dedicated hardware is fast; _really fast_** 🚀
+* Software emulation provided as a fallback when dedicated hardware absent – _slow_ 🚲
 .little[
-- e.g. Graphics using CPU when dedicated GPU is missing
+- e.g. Graphics using CPU when GPU is missing
 ]
-* Python’s `int` has _arbitrary-precision_ because internally [**all** integers are big ints](https://rushter.com/blog/python-integer-implementation/)
+
+---
+
+template: zero-cost-abs-1
+name: zero-cost-abs-2
+
+* Python’s `int` has _arbitrary-precision_ because internally [**all** integers are big!](https://rushter.com/blog/python-integer-implementation/) 😲
 
   - Programmer is never exposed system’s native integer (64-bits)
   - Software emulation, not for specific algorithms but, for a basic functionality
   - Every programmer penalized for flexibility so that expressions like `2 ** 80` work
+
+---
+
+template: zero-cost-abs-2
+
 * C++ only provides `int`, and no more, since your machine only has that!
 
   - .tag[Flexibility] Include a library or write one just for the module needing `BigInt`
@@ -415,7 +440,7 @@ class: center, middle, inverse
 .little[Programmer, not the language, is in charge. Believes programmer knows what s/he doing.]
 
 * .tag[Hardware] _Low-level access_ enables authoring kernel, virtual machines, …<br />
-.little[Direct access to CPU/GPU/OS facilities, _yum_!  No VM, no GC  _no middleman — no comission_.]
+.little[Direct access to CPU/GPU/OS facilities, _yum_!  No VM, no GC  _no middleman — no commission_.]
 
 <div>
 .footnote[.red[¹]: Not system virtual machine (like VMWare, Qemu, VirtualBox, …), but **[process virutal machine](https://en.wikipedia.org/wiki/Virtual_machine#Process_virtual_machines)** (like JVM, CLR, Python interpreter, …)]
@@ -424,81 +449,6 @@ class: center, middle, inverse
 
 .footnote[.red[³]: A key design guideline of the C++ standards committee; another is _portability_.]
 </div>
-
----
-
-class: left, inverse
-name: knuth-1
-
-## .center[**Use the Right Tool for the Right Job**]
-
----
-
-template: knuth-1
-name: knuth-2
-
-<br />
-
-.little[### We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil.]
-
----
-
-template: knuth-2
-name: knuth-3
-
-.little[##Yet **we should not pass up our opportunities in that critical 3%**.
-### .right[— Donald Knuth / Tony Hoare]]
-
----
-
-template: knuth-3
-
-#### C++ is keen about _that_ 3% — as a language community.
-
-We mean to _eek out the very last drop of juice a CPU’s got!_
-
-???
-
-We’ll discuss sane defaults when writing C++ software — just good habits, not pessimizations.
-
----
-
-# Browser is **system software**
-
-It’s complex and critical; comparable to a
-
-.pull-left[
-* Kernel
-
-* Game engine
-
-* Compiler / virtual machine
-
-* Real-time financial trading system
-]
-
-.pull-right[
-> Wasting a small time delta every operation = **systemic lag** hurting productivity.
-]
-
-Ever wondered what language virtual machines are written in?
-
-* [C#](https://stackoverflow.com/q/1324919/183120)
-* [Java](https://stackoverflow.com/a/10028154/183120)
-* [Python](https://en.wikipedia.org/wiki/CPython)
-* JavaScript
-  - Mozilla’s [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
-  - Google’s [V8](https://v8.dev/)
-
-_The Need for Speed_ justifies writing browsers in C++ 🏁
-
----
-
-class: center, middle, inverse
-
-## That makes you a
-# **System Programmer**
-### Take pride — there aren’t many.
 
 ---
 
@@ -646,11 +596,11 @@ struct Machine {                               struct Image {
 };
 int main() {                                     int size() const { return w * h; }
   // shallow / trivial copy
-  Machine m1 = { 1, 1.2f }, m2;                 Image(int width, int height)
-  m2.max_memory = m1.max_memory;                  : w(width), h(height) { }
-  m2.dimensions = m2.dimensions;                Image() : Image(0, 0) { }
-                                                ~Image() { if (pixels)
-                                                              delete [] pixels; }
+  Machine m1 = { 1, 1.2f }, m2;                  Image(int width, int height)
+  m2.max_memory = m1.max_memory;                   : w(width), h(height) { }
+  m2.dimensions = m2.dimensions;                 Image() : Image(0, 0) { }
+                                                 ~Image() { if (pixels)
+                                                               delete [] pixels; }
                                                };
   // make an image, allocate pixel data
   Image owner(4, 4);
@@ -983,7 +933,7 @@ struct Circle {
 
 * Prefer member initializers over setting them in the body
 * Make constructors `explicit` to prevent on-the-fly creation<br />
-.little[e.g. `DrawFigure(float) ≠ DrawFigure(Circle(float)) // for heavy-classes, on-the-fly creation is a big red-sign`]
+.little[e.g. `DrawFigure(float) ≠ DrawFigure(Circle(float))` for heavy-classes, on-the-fly creation is a red flag 🚷]
 * Want to control creation?
 .little[
 - `delete` default constructor, don’t supply other constructors
@@ -992,7 +942,8 @@ struct Circle {
 
 ---
 
-## 1.1 **Temporaries, References** .little[l-values, r-values, oh-my-values!!]
+## 1.1 **Temporaries, References**
+
 
 * _References_ are just nicknames; underlying object is exactly the same
 .little[
@@ -1014,6 +965,8 @@ c.ComputeBounds();  // returned Size is a temporary alive until expression evalu
 Image i1, &i2, &&i3;  // objects of type lvalue, rvalue-reference, lvalue-reference
 std::move(i2)         // expression type: Image, value category: xvalue
 ```
+
+### [l-values, r-values](https://en.cppreference.com/w/cpp/language/value_category)… oh-my-values!! 🤯
 
 * _lvalue_: have identity, cannot be stolen e.g. `int a; Circle &&c;`
 
@@ -1055,9 +1008,9 @@ But wait! RAII recursively, right? Wouldn’t the defaults suffice? They totally
 
 ``` c++
 class Image {
-  // ... and we're done!!!  Wisely preferred RAII wrapper (vector) over raw pointers
+  // ... and we're done! We wisely chose RAII wrapper over raw pointers :)
 
-  // What would implicitly generated defaults look like? Move, same as above. Copy:
+  // How implicitly generated defaults look like?  Move, same as above.  Copy:
   //
   // Image(const Image& that) : w_(that.w_), h_(that.h_), pixels_{that.pixels_} {
   // }                      // std::vector's copy constructor does the right thing 👍
@@ -1084,12 +1037,12 @@ class Image {
   Image& operator=(Image&& that) {
     this->w_ = std::move(that->w_);
     this->h_ = std::move(that->h_);
-    this->pixels_ = std::move(that->pixels_);  // std::vector::operator= does move, yay!
-    return *this;
+    this->pixels_ = std::move(that->pixels_);   // std::vector::operator= does move
+    return *this;                               // its stuff safely, yay!
   }
   
-  // You only used smart types as members, didn't ya, you sly fox! Say "yay" and
-  // skip writing them both: Bask in the glory of _The Rule of Zero_ 😏
+  // You only used smart types as members, didn't ya, you sly fox?!
+  // Skip writing both and bask in the glory: “The Rule of Zero” 😏
 };
 ```
 
@@ -1123,3 +1076,95 @@ class Image {
 * `In` but need copy: give two overloads
   1. `f(const X&)` – `const` reference – for those who want to keep theirs
   2. `f(X&&)` – rvalue reference – for those who want to give up theirs
+
+---
+
+class: left, inverse
+name: knuth-1
+
+## .center[**Use the Right Tool for the Right Job**]
+
+---
+
+template: knuth-1
+name: knuth-2
+
+<br />
+
+.little[### We should forget about small efficiencies, say about 97% of the time: premature optimization is the root of all evil.]
+
+---
+
+template: knuth-2
+name: knuth-3
+
+.little[##Yet **we should not pass up our opportunities in that critical 3%**.
+### .right[— Donald Knuth / Tony Hoare]]
+
+---
+
+template: knuth-3
+
+#### C++ is keen about _that_ 3% — as a language community.
+
+We mean to _eek out the very last drop of juice a CPU’s got!_
+
+???
+
+We’ll discuss sane defaults when writing C++ software — just good habits, not pessimizations.
+
+---
+
+# Browser is **system software**
+
+It’s complex and critical; comparable to a
+
+.pull-left[
+* Kernel
+
+* Game engine
+
+* Compiler / virtual machine
+
+* Real-time financial trading system
+]
+
+.pull-right[
+> Wasting a small time delta every operation = **systemic lag** hurting productivity.
+]
+
+Ever wondered what language virtual machines are written in?
+
+* [C#](https://stackoverflow.com/q/1324919/183120)
+* [Java](https://stackoverflow.com/a/10028154/183120)
+* [Python](https://en.wikipedia.org/wiki/CPython)
+* JavaScript
+  - Mozilla’s [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
+  - Google’s [V8](https://v8.dev/)
+
+_The Need for Speed_ justifies writing browsers in C++ 🏁
+
+---
+
+class: center, middle, inverse
+
+## That makes you a
+# **System Programmer**
+### Take pride — there aren’t many.
+
+---
+
+# Links and Recommendations
+
+* [Standard C and C++ Documentation](https://en.cppreference.com/)
+
+* [ISO C++ FAQ](https://isocpp.org/wiki/faq/)
+
+* [The Definitive C++ Book Guide and List](https://stackoverflow.com/q/388242/183120)
+
+# Online Compilers
+
+* [Coliru Stacked Crooked](http://coliru.stacked-crooked.com/) – Minimal with Share option
+
+* [Compiler Explorer / Godbolt](https://godbolt.org/) – Disassembly<br />
+.little[Online Compiler with Disassembly - Supports numerous compilers!]
