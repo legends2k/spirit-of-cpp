@@ -338,7 +338,7 @@ class: center, middle, inverse
 
 * Values, instructions, addresses cannot exceed as CPU cannot understand a larger _integer_
 
-* How then to represent larger integers?  _Bit Integers_ a.k.a _Big Numbers_
+* How then to represent larger integers?  _Big Integers_ a.k.a _Big Numbers_
 
 * Make an array of 64-bit integers each representing a part of the constituted big integer
 
@@ -433,7 +433,7 @@ template: zero-cost-abs-2
 
 ## Languages for **critical** software <small>(C++, C, Rust, …)</small>
 
-* .tag[Performance] _Zero-overhead abstractions_.red[2]; as close to hardware as possible but not closer.<br />
+* .tag[Performance] [Zero-overhead abstractions](https://isocpp.org/wiki/faq/big-picture#zero-overhead-principle).red[2]; as close to hardware as possible but not closer.<br />
 .little[Easy to reason about the machine code generated for your program.]
 
 * .tag[Flexibility] You choose what you want. _You only pay for what you use_.red[3].<br />
@@ -457,7 +457,7 @@ template: zero-cost-abs-2
 .pull-left[
 ### Stack
 - **Automatic** allocation and deallocation
-.little[- Alloc/dealloc order: lexical/reverse lexical
+.little[- Alloc/dealloc order: lexical/reverse lexical order.red[1]
 ]
 - **Fast**: _really_ fast! 🚀
 .little[
@@ -480,7 +480,7 @@ template: zero-cost-abs-2
 ### Heap
 - **Manual** allocation and deallocation
 .little[- Manual memory management is a _land mine_ 💥
-- 40 years of experience proves we are bad at it; be smart, use `unique_ptr`, `shared_ptr`, `weak_ptr`, `vector`, `string` …
+- [40 years of experience proves we are bad at it](https://youtu.be/u_ij0YNkFUs?t=1670); be smart, use `unique_ptr`, `shared_ptr`, `weak_ptr`, `vector`, `string` …
 - Never even write `new`, `malloc`, `CoTaskMemAlloc`, …
 - Know: `delete ≠ delete []`, `delete ≠ free()`, …
 ]
@@ -490,6 +490,9 @@ template: zero-cost-abs-2
 - _Pointer chasing_ isn’t cache-friendly
 ]
 - No scope; alive until manually freed
+.little[
+- Rich source of [memory leaks](https://en.wikipedia.org/wiki/Memory_leak)! [Live example](http://coliru.stacked-crooked.com/a/7a2ece5e08c85380).
+]
 - Practically no limit
 .little[([32-bit: 3 GiB, 64-bit: 16 EiB](https://softwareengineering.stackexchange.com/a/207390/4154))]
 ]
@@ -501,8 +504,10 @@ void LoadCount(int* count);
 // THE GOOD          // THE BAD              // THE UGLY
 int c = 0;           int* c = new int;       unique_ptr<int> c = make_unique<int>();
 LoadCount(&c);       LoadCount(c);           LoadCount(c.get());
-                     delete c;
+                     delete c;               // needless alloc and dealloc - slow
 ```
+
+.footnote[.red[¹]: Order matters: so from top to bottom, declare least dependant to most dependant – both in function and `struct`/`class`.]
 
 ???
 - Stack size is OS-dependant too: 8 MiB on macOS
@@ -551,20 +556,20 @@ int main() {                            SmartUser u1 = {0, {}, new SmartPassport
 ## 4.2 Memory: **Shallow Copy**, **Deep Copy** and **Move**
 
 ``` c++
-//- SHALLOW COPY: copy values as-is -------------------------------------------------
+//--SHALLOW COPY: copy values as-is -------------------------------------------------
 //                                                        owner     clone
   int owner = 12;  // owner has data originally          +----+    +----+
   int clone = 0;   // need to make a copy                | 12 |    | 12 |
   clone = owner;   // copy value as-is                   +----+    +----+
 
-//-SHALLOW COPY of pointer (almost always wrong) ------------------------------------
+//--SHALLOW COPY of pointer (mostly wrong, unless intended sharing) -----------------
 //                                                   owner       data      clone
   int* owner = new int(12); // owner is a pointer  +-------+   .-----.   +-------+
   int* clone = owner;       // clone copies it!!   | 0x100 |-->| 12  |<--| 0x100 |
 // Inconsistent ownership!!                        +-------+   '-----'   +-------+
 // Responsibility unclear: who'll free data?                    0x100
 
-//-DEEP COPY: both gets to keep their own copy---------------------------------------
+//--DEEP COPY: both gets to have its own copy----------------------------------------
 //                                                    owner            clone
   int* owner = new int; *owner = 12; //              +-----+  .----.  +-----+  .----.
   int* clone = new int; // allocate memory           |0x100|->| 12 |  |0x200|->| 12 |
@@ -718,7 +723,7 @@ int __GetScale(const __Widget* w) { return w->scale_; }
 .little[
 - Text editor declares, **not defines**, a `bool IPlugin::post-process(std::string)`
 - Every plug-in author implements (defines) it differently
-- When compiling editor the actual function’s code is non-existent; offset unknown – can’t to static dispatch
+- When compiling editor the actual function’s code is non-existent; offset unknown – can’t do static dispatch
 - At run-time, if a plug-in SO/DLL is present, load function (`dlsym` or `GetProcAddress`) and dispatch dynamically
 - .tag[Flexibility] **Both editor and plug-in code can build independently**! Weak coupling FTW 💪
 ]
@@ -820,7 +825,7 @@ int main() {
   crtMon.PutPixel(10, 5, Color(255, 0, 0));  // static dispatch
 
   pd = MakeDisplay(params);
-  pdf->PutPixel(20, 3, Color(0, 0, 255));     // dynamic dispatch
+  pd->PutPixel(20, 3, Color(0, 0, 255));     // dynamic dispatch
 
   delete pd;    // Destroy object behind IDisplay*.  Calls
                 // 1. ~CCrtMonitor properly (thanks to virtual ~IDisplay)
@@ -832,7 +837,6 @@ int main() {
 ```
 
 ---
-
 
 ## 6: **RAII**.red[¹]: acquire in `T()` and release in `~T()`
 
@@ -895,11 +899,11 @@ private:
   std::unique_ptr<FILE, FileCloser> file_;  // unique_ptr auto closes file
   std::vector<std::byte> data_; // vector manages bytes, auto resizes array
 };
-// Functor is a function with states. This function takes a unique_ptr's T*.
-struct FileCloser {  // Callable this: FileCloser fc;  fc(file_ptr);
-  void operator()(FILE* f) {
-    if (f) fclose(f);
-  }
+// Functor is like a function but can have states; lambda functions are functors too.
+struct FileCloser {           // This function takes a FILE* and returns nothing.
+  void operator()(FILE* f) {  // Callable thus: FileCloser fc;  fc(file_ptr);
+    if (f) fclose(f);         // Usable as unique_ptr<T>'s Deleter as its prototype
+  }                           // matches it by a taking T*; here T = FILE.
 };
 ```
 Recursive since `FileReader` – a smart wrapper – is now embed-able in another higher abstraction 💡 When _that_ gets destroyed, `FileReader` will automatically release its resources.
@@ -932,12 +936,12 @@ struct Circle {
 ```
 
 * Prefer member initializers over setting them in the body
-* Make constructors `explicit` to prevent on-the-fly creation<br />
+* [Make constructors `explicit`](https://isocpp.org/wiki/faq/ctors#explicit-ctors) to prevent on-the-fly creation<br />
 .little[e.g. `DrawFigure(float) ≠ DrawFigure(Circle(float))` for heavy-classes, on-the-fly creation is a red flag 🚷]
 * Want to control creation?
 .little[
-- `delete` default constructor, don’t supply other constructors
-- Author a `static` class function that acts as a factory (_Named Constructor Idiom_)
+- Make constructors `private`
+- Author a `static` class function that acts as a factory ([_Named Constructor Idiom_](https://isocpp.org/wiki/faq/ctors#named-ctor-idiom))
 ]
 
 ---
@@ -962,7 +966,7 @@ c.ComputeBounds();  // returned Size is a temporary alive until expression evalu
 * Objects only have types; expressions have a **non-reference** _type_ and a _value category_
 
 ``` c++
-Image i1, &i2, &&i3;  // objects of type lvalue, rvalue-reference, lvalue-reference
+Image i1, &i2, &&i3;  // objects of type lvalue, lvalue-ref, rvalue-ref to Image
 std::move(i2)         // expression type: Image, value category: xvalue
 ```
 
@@ -1051,12 +1055,12 @@ class Image {
 
 ---
 
-## 2.1 Function **Parameter and Return Type** — Defaults
+## 2.1 Function **Parameter and Return Type** — Defaults.red[¹]
 
 * `Out` parameter a.k.a return value: `X f()` – by value
 .little[
 - xvalue would get moved
-- Even for move-unfriendly types compiler does _Return Value Optimization_ / _Copy Elision_
+- Even for move-unfriendly types compiler does _Return Value Optimization_ / [_Copy Elision_](https://isocpp.org/wiki/faq/myths#copy-elision)
 ]
 
 * `Out` but expensive to move (e.g. `std::vector<BigPOD>`): `f(X&)` or `f(X*)` – by reference
@@ -1076,6 +1080,8 @@ class Image {
 * `In` but need copy: give two overloads
   1. `f(const X&)` – `const` reference – for those who want to keep theirs
   2. `f(X&&)` – rvalue reference – for those who want to give up theirs
+
+.footnote[.red[¹]: based on [Herb Sutter’s CppCon 2014 presentation](https://github.com/CppCon/CppCon2014/blob/master/Presentations/Back%20to%20the%20Basics!%20Essentials%20of%20Modern%20C%2B%2B%20Style/Back%20to%20the%20Basics!%20Essentials%20of%20Modern%20C%2B%2B%20Style%20-%20Herb%20Sutter%20-%20CppCon%202014.pdf); see pages 22 to 34.]
 
 ---
 
@@ -1167,4 +1173,4 @@ class: center, middle, inverse
 * [Coliru Stacked Crooked](http://coliru.stacked-crooked.com/) – Minimal with Share option
 
 * [Compiler Explorer / Godbolt](https://godbolt.org/) – Disassembly<br />
-.little[Online Compiler with Disassembly - Supports numerous compilers!]
+.little[Online Compiler with Disassembly – supports numerous compilers!]
