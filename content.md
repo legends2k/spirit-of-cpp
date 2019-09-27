@@ -479,7 +479,7 @@ template: zero-cost-abs-2
 .pull-right[
 ### Heap
 - **Manual** allocation and deallocation
-.little[- Manual memory management is a _land mine_ 💥
+.little[- [Manual memory management](https://isocpp.org/wiki/faq/freestore-mgmt#memory-leaks) is a _land mine_ 💥
 - [40 years of experience proves we are bad at it](https://youtu.be/u_ij0YNkFUs?t=1670); be smart, use `unique_ptr`, `shared_ptr`, `weak_ptr`, `vector`, `string` …
 - Never even write `new`, `malloc`, `CoTaskMemAlloc`, …
 - Know: `delete ≠ delete []`, `delete ≠ free()`, …
@@ -491,7 +491,7 @@ template: zero-cost-abs-2
 ]
 - No scope; alive until manually freed
 .little[
-- Rich source of [memory leaks](https://en.wikipedia.org/wiki/Memory_leak)! [Live example](http://coliru.stacked-crooked.com/a/7a2ece5e08c85380).
+- Hot bed of [memory leaks](https://en.wikipedia.org/wiki/Memory_leak)! [Stack unwinding example](http://coliru.stacked-crooked.com/a/7a2ece5e08c85380).
 ]
 - Practically no limit
 .little[([32-bit: 3 GiB, 64-bit: 16 EiB](https://softwareengineering.stackexchange.com/a/207390/4154))]
@@ -507,7 +507,7 @@ LoadCount(&c);       LoadCount(c);           LoadCount(c.get());
                      delete c;               // needless alloc and dealloc - slow
 ```
 
-.footnote[.red[¹]: Order matters: so from top to bottom, declare least dependant to most dependant – both in function and `struct`/`class`.]
+.footnote[.red[¹]: **Order matters**: from top to bottom, left to right, declare least dependant to most dependant – both in function and `struct`/`class`.]
 
 ???
 - Stack size is OS-dependant too: 8 MiB on macOS
