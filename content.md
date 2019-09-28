@@ -728,7 +728,7 @@ int __GetScale(const __Widget* w) { return w->scale_; }
 - .tag[Flexibility] **Both editor and plug-in code can build independently**! Weak coupling FTW 💪
 ]
 
-.footnote[.red[¹]: a.k.a. _double dispatch_; broadly known as (run-time) _polymorphism_]
+.footnote[.red[¹]: also known broadly as (run-time) _polymorphism_]
 .footnote[.red[²]: The _S_ in [SOLID Principles](https://en.wikipedia.org/wiki/SOLID_(object-oriented_design)]
 
 ---
