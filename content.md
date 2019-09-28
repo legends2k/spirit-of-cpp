@@ -222,7 +222,7 @@ int main(int argc, char** argv) {
 * **Use [fixed-width integers](https://en.cppreference.com/w/cpp/types/integer)**:  `uint8_t`, `int_fast16_t`, `int32_t`, `uintptr_t`, …
 .little[- `unsigned`: beware of wrap around behaviour; decrement with extreme care e.g. `uint8_t x = 0; --x; // x is now 255`]
 * Use `short`, `int`, `long`, etc. when you’re _sure_ minimum (guaranteed) width is enough <br />
-  .little[- Chromium has `int`s but use only a few compilers (all having 32-bit `int`) and [target only `i686`, `x86_64` and `ARM32` builds](https://www.chromium.org/chromium-os/how-tos-and-troubleshooting/chromiumos-architecture-porting-guide) ]
+.little[- Firefox/Chromium has `int`s but use only a few compilers (all have 32-bit `int`) and target only `i686`, `x86_64` and `ARM32`]
 
 ---
 
@@ -1164,15 +1164,20 @@ class: center, middle, inverse
 
 # Links and Recommendations
 
-* [Standard C and C++ Documentation](https://en.cppreference.com/)
+* [Standard C and C++ Documentation](https://en.cppreference.com/)<br />
+.little[Online documentation that matches C++ standard the closest.]
 
-* [ISO C++ FAQ](https://isocpp.org/wiki/faq/)
+* [ISO C++ FAQ](https://isocpp.org/wiki/faq/)<br />
+.little[Your first go-to when in doubt.]
 
-* [The Definitive C++ Book Guide and List](https://stackoverflow.com/q/388242/183120)
+* [The Definitive C++ Book Guide and List](https://stackoverflow.com/q/388242/183120)<br />
+.little[Curated/updated list of book recommendations by skill level.]
+
 
 # Online Compilers
 
-* [Coliru Stacked Crooked](http://coliru.stacked-crooked.com/) – Minimal with Share option
+* [Coliru Stacked-Crooked](http://coliru.stacked-crooked.com/)<br />
+.little[Minimal with _Share_ option.]
 
-* [Compiler Explorer / Godbolt](https://godbolt.org/) – Disassembly<br />
-.little[Online Compiler with Disassembly – supports numerous compilers!]
+* [Compiler Explorer / Godbolt](https://godbolt.org/)<br />
+.little[Shows disassembly mapping each line of C++ – supports numerous compilers!]
