@@ -935,7 +935,7 @@ struct Circle {
 };
 ```
 
-* Prefer member initializers over setting them in the body
+* Prefer [member initializers](https://isocpp.org/wiki/faq/ctors#init-lists) over setting them in the body
 * [Make constructors `explicit`](https://isocpp.org/wiki/faq/ctors#explicit-ctors) to prevent on-the-fly creation<br />
 .little[e.g. `DrawFigure(float) ≠ DrawFigure(Circle(float))` for heavy-classes, on-the-fly creation is a red flag 🚷]
 * Want to control creation?
@@ -1045,13 +1045,15 @@ class Image {
     return *this;                               // its stuff safely, yay!
   }
   
-  // You only used smart types as members, didn't ya, you sly fox?!
-  // Skip writing both and bask in the glory: “The Rule of Zero” 😏
+  // You only used smart types as members, didn't ya, you sly fox?! 😏
+  // Skip writing both and bask in the glory: _The Rule of Zero¹_
 };
 ```
 
 - Implicitly generated move constructor will fallback to copy if a type isn’t move-friendly e.g. is a POD or has no move constructor
 - No implicit generation if even one member is non-copyable or immovable
+
+.footnote[.red[¹]: [The Rule of Three / Five / Zero](http://en.cppreference.com/w/cpp/language/rule_of_three)]
 
 ---
 
