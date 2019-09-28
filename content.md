@@ -966,7 +966,7 @@ c.ComputeBounds();  // returned Size is a temporary alive until expression evalu
 * Objects only have types; expressions have a **non-reference** _type_ and a _value category_
 
 ``` c++
-Image i1, &i2, &&i3;  // objects of type lvalue, lvalue-ref, rvalue-ref to Image
+Image i1, &i2, &&i3;  // objects of type Image, lvalue-ref & rvalue-ref to Image
 std::move(i2)         // expression type: Image, value category: xvalue
 ```
 
@@ -1061,7 +1061,7 @@ class Image {
 
 * `Out` parameter a.k.a return value: `X f()` – by value
 .little[
-- xvalue would get moved
+- Returned prvalue would get moved.
 - Even for move-unfriendly types compiler does _Return Value Optimization_ / [_Copy Elision_](https://isocpp.org/wiki/faq/myths#copy-elision)
 ]
 
