@@ -1061,8 +1061,8 @@ class Image {
 
 * `Out` parameter a.k.a return value: `X f()` – by value
 .little[
-- Returned prvalue would get moved.
-- Even for move-unfriendly types compiler does _Return Value Optimization_ / [_Copy Elision_](https://isocpp.org/wiki/faq/myths#copy-elision)
+- Returned _prvalue_ would get moved even without optimizations
+- Zero cost due to _Return Value Optimization_ / [_Copy Elision_](https://isocpp.org/wiki/faq/myths#copy-elision) even for move-unfriendly types
 ]
 
 * `Out` but expensive to move (e.g. `std::vector<BigPOD>`): `f(X&)` or `f(X*)` – by reference
