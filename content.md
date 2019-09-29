@@ -4,6 +4,8 @@ class: center, middle, inverse
 
 ### Sundaram Ramaswamy
 
+.footnote[Press `f` for full-screen, `?` for presentation controls.]
+
 ---
 
 class: center, middle, inverse
