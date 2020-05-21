@@ -3,6 +3,8 @@ A presentation for the non-C++ programmer to build a healthy C++ mental model.  
 
 [View it directly in your browser](https://legends2k.github.io/spirit-of-cpp) (viewable on a mobile too).
 
+Alternatively, [save the presentation as PDF](https://github.com/legends2k/spirit-of-cpp/releases/download/v1.0.1/spirit-of-cpp.pdf) for offline viewing.
+
 ## Overview
 
 > C++11 feels like a new language. — [Bjarne Stroustrup](http://www.stroustrup.com/C++11FAQ.html#think), Creator of C++
