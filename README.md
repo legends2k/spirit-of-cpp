@@ -14,3 +14,9 @@ C++ has sort of become an expert-friendly language [like its creator acknowledge
 > Experienced C++ programmers as well as C++ novices must learn to use Standard C++ as a new and higher-level language as a matter of course and descend to lower levels of abstraction only where absolutely necessary. — [Learning Standard C++ as a New Language](http://www.stroustrup.com/new_learning.pdf), §5 Summary, Bjarne Stroustrup
 
 This presentation tries to use live examples (code with disassembly), data diagrams and lots of code examples to build a healthy C++ mental model.  Lot of details, pointers and recommendations are strewn across the presentation (as links) so that an interested learner can go deep and explore more; the hope is that one would.  The not-so-interested parties can still get a good overview.  When they hit a bottleneck or want to learn _that_ concept they think might be useful in solving their current problem, they’d know where to come and refer.
+
+
+# TODO
+
+1. Remove ‘EB Garamond’ and ‘Gabriela’ fonts to generate a slimmer PDF
+  - Alternatively, try slimming them down by giving only the needed variants
