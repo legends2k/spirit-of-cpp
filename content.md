@@ -1149,7 +1149,7 @@ Ever wondered what language virtual machines are written in?
 * [Java](https://stackoverflow.com/a/10028154/183120)
 * [Python](https://en.wikipedia.org/wiki/CPython)
 * JavaScript
-  - Mozilla’s [SpiderMonkey](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey)
+  - Mozilla’s [SpiderMonkey](https://spidermonkey.dev/)
   - Google’s [V8](https://v8.dev/)
 
 _The Need for Speed_ justifies writing browsers in C++ 🏁
